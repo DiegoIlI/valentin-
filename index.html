@@ -11,7 +11,6 @@ html,body{
   height:100%;
   background:#05060a;
   overflow:hidden;
-  overscroll-behavior:none;
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
 }
 canvas{
@@ -20,7 +19,7 @@ canvas{
 }
 .ui{
   position:fixed;
-  top:15px;
+  top:18px;
   left:50%;
   transform:translateX(-50%);
   display:flex;
@@ -61,29 +60,28 @@ canvas{
 </div>
 
 <script>
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("c");
+const ctx=canvas.getContext("2d");
 
 let W,H,DPR;
 function resize(){
-  DPR = Math.min(2, window.devicePixelRatio || 1);
-  W = innerWidth;
-  H = innerHeight;
-  canvas.width = W*DPR;
-  canvas.height = H*DPR;
-  canvas.style.width = W+"px";
-  canvas.style.height = H+"px";
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  W=innerWidth;
+  H=innerHeight;
+  canvas.width=W*DPR;
+  canvas.height=H*DPR;
+  canvas.style.width=W+"px";
+  canvas.style.height=H+"px";
   ctx.setTransform(DPR,0,0,DPR,0,0);
 }
 resize();
 addEventListener("resize",resize);
 
-// ===== MATRIX EFECTO BONITO =====
-let columns;
-let drops=[];
+// ===== MATRIX =====
+let columns,drops;
 function initMatrix(){
-  columns = Math.floor(W/18);
-  drops = Array(columns).fill(1);
+  columns=Math.floor(W/18);
+  drops=Array(columns).fill(1);
 }
 initMatrix();
 
@@ -95,11 +93,11 @@ function drawMatrix(){
   ctx.font="16px monospace";
 
   for(let i=0;i<drops.length;i++){
-    let text=String.fromCharCode(0x30A0+Math.random()*96);
+    let char=String.fromCharCode(0x30A0+Math.random()*96);
     let x=i*18;
     let y=drops[i]*18;
 
-    ctx.fillText(text,x,y);
+    ctx.fillText(char,x,y);
 
     if(y>H && Math.random()>0.975){
       drops[i]=0;
@@ -108,7 +106,7 @@ function drawMatrix(){
   }
 }
 
-// ===== TEXTO BRILLANTE =====
+// ===== TEXTO BRILLO =====
 function drawText(text,size,y){
   ctx.save();
   ctx.textAlign="center";
@@ -121,7 +119,7 @@ function drawText(text,size,y){
   ctx.restore();
 }
 
-// ===== CORAZÓN PRO =====
+// ===== CORAZÓN GRANDE =====
 function drawHeart(cx,cy,scale,pulse){
   ctx.save();
   ctx.translate(cx,cy);
@@ -138,62 +136,50 @@ function drawHeart(cx,cy,scale,pulse){
 
   ctx.fillStyle="rgba(255,79,216,.95)";
   ctx.shadowColor="rgba(255,79,216,.9)";
-  ctx.shadowBlur=60;
+  ctx.shadowBlur=80;
   ctx.fill();
-
   ctx.restore();
 }
 
 // ===== ESCENAS =====
 let scene=0;
-let sceneStart=0;
-let name="Mi Amor";
-const sceneTime=1500;
+let start=0;
+let name="Misita❤️";
+const time=1400;
 
 function restart(){
   name=document.getElementById("name").value||"Mi Amor";
   scene=0;
-  sceneStart=performance.now();
+  start=performance.now();
 }
 
-function updateScene(now){
-  if(scene<6 && now-sceneStart>sceneTime){
+function update(now){
+  if(scene<6 && now-start>time){
     scene++;
-    sceneStart=now;
+    start=now;
   }
 }
 
 function loop(now){
   drawMatrix();
-  updateScene(now);
+  update(now);
 
-  const big=Math.min(W,H)*0.38;
-  const mid=Math.min(W,H)*0.16;
+  const big=Math.min(W,H)*0.40;
+  const mid=Math.min(W,H)*0.17;
 
   switch(scene){
-    case 0:
-      drawText("1",big,H*0.5);
-      break;
-    case 1:
-      drawText("2",big,H*0.5);
-      break;
-    case 2:
-      drawText("3",big,H*0.5);
-      break;
-    case 3:
-      drawText("You",mid,H*0.4);
-      break;
-    case 4:
-      drawText("Are",mid,H*0.5);
-      break;
-    case 5:
-      drawText("My Sunshine",mid,H*0.6);
-      break;
+    case 0: drawText("1",big,H*0.5); break;
+    case 1: drawText("2",big,H*0.5); break;
+    case 2: drawText("3",big,H*0.5); break;
+    case 3: drawText("You",mid,H*0.4); break;
+    case 4: drawText("Are",mid,H*0.5); break;
+    case 5: drawText("My Sunshine",mid,H*0.6); break;
     default:
       let pulse=1+0.08*Math.sin(now*0.006);
-      drawHeart(W/2,H*0.5,Math.min(W,H)*0.013,pulse);
-      drawText("TE ADORO",Math.min(W,H)*0.07,H*0.48);
-      drawText(name,Math.min(W,H)*0.055,H*0.58);
+      drawHeart(W/2,H*0.52,Math.min(W,H)*0.018,pulse);
+
+      drawText("TE ADORO",Math.min(W,H)*0.08,H*0.48);
+      drawText(name,Math.min(W,H)*0.06,H*0.62);
   }
 
   requestAnimationFrame(loop);
