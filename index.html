@@ -21,7 +21,7 @@
       pointer-events:none;
       color:rgba(233,240,255,.9);
       text-shadow:0 2px 10px rgba(0,0,0,.6);
-      font-weight:600;
+      font-weight:700;
       z-index:5;
     }
     .pill{
@@ -39,7 +39,7 @@
       border:none; outline:none;
       background:transparent;
       color: var(--text);
-      font-weight:700;
+      font-weight:800;
     }
     .pill button{
       border:none; outline:none; cursor:pointer;
@@ -48,17 +48,16 @@
       border:1px solid rgba(255,79,216,.35);
       padding:8px 10px;
       border-radius:999px;
-      font-weight:800;
+      font-weight:900;
     }
     .hint{
       pointer-events:none;
       opacity:.75;
-      font-weight:600;
+      font-weight:700;
       font-size:12px;
       line-height:1.2;
       text-align:right;
     }
-    .hint b{opacity:1}
     @media (max-width:520px){
       .hint{display:none;}
       .pill input{width: 120px;}
@@ -77,7 +76,7 @@
       <button id="go">▶</button>
     </div>
     <div class="hint">
-      Toca/clic para <b>reiniciar</b><br/>y ver la animación otra vez
+      Toca/clic para reiniciar
     </div>
   </div>
 
@@ -88,33 +87,36 @@
 
   // ====== Config ======
   const CFG = {
-    matrixSpeed: 1.25,
+    matrixSpeed: 1.18,
     matrixFont: 16,
-    matrixFade: 0.08,
+    matrixFade: 0.085,
     matrixColor: 'rgba(255,79,216,0.85)',
     glowColor: 'rgba(255,79,216,0.55)',
 
     particleColor: 'rgba(255,255,255,0.95)',
-    particleCountDesktop: 1700,
-    particleCountMobile: 1300,
-    settleSpeed: 0.075,
+    particleCountDesktop: 2000,
+    particleCountMobile: 1550,
+    settleSpeed: 0.085,
 
+    // overlay mini-hearts
     heartPink: 'rgba(255,79,216,.95)',
     heartPink2: 'rgba(255,143,233,.85)',
-    heartGlow: 'rgba(255,79,216,.55)',
   };
 
   // ====== Resize ======
-  let W=0, H=0, DPR=1;
+  let W=0, H=0, DPR=1, isMobile=false;
   function resize(){
     DPR = Math.min(2, window.devicePixelRatio || 1);
     W = Math.floor(innerWidth);
     H = Math.floor(innerHeight);
+    isMobile = W < 700;
+
     canvas.width = Math.floor(W * DPR);
     canvas.height = Math.floor(H * DPR);
     canvas.style.width = W+'px';
     canvas.style.height = H+'px';
     ctx.setTransform(DPR,0,0,DPR,0,0);
+
     matrixInit();
   }
   addEventListener('resize', resize, {passive:true});
@@ -147,56 +149,87 @@
       ctx.fillText(ch, x, y);
 
       drops[i] += CFG.matrixFont * CFG.matrixSpeed;
-      if(drops[i] > H + Math.random()*400) drops[i] = -Math.random()*300;
+      if(drops[i] > H + Math.random()*420) drops[i] = -Math.random()*300;
     }
     ctx.shadowBlur = 0;
   }
 
-  // ====== Target points ======
+  // ====== Offscreen for crisp text targets (NO SHADOW) ======
   const off = document.createElement('canvas');
   const ox = off.getContext('2d');
 
-  function makeTarget(drawFn){
-    off.width = Math.floor(W);
-    off.height = Math.floor(H);
+  function makeTextTarget(drawFn){
+    // Importante: sin blur, sin sombras, sin glow -> letras nítidas
+    off.width = W;
+    off.height = H;
     ox.clearRect(0,0,W,H);
+    ox.fillStyle = 'black';
+    ox.fillRect(0,0,W,H);
+
     drawFn(ox);
 
     const img = ox.getImageData(0,0,W,H).data;
     const pts = [];
 
-    const step = Math.max(3, Math.round(Math.min(W,H)/260));
-    for(let y=0;y<H;y+=step){
-      for(let x=0;x<W;x+=step){
+    // step más fino en móvil para que no se vuelva bloque
+    const step = isMobile ? 2 : 3;
+    const alphaThreshold = 40; // solo pixels “firmes”
+
+    for(let y=0; y<H; y+=step){
+      for(let x=0; x<W; x+=step){
         const a = img[(y*W + x)*4 + 3];
-        if(a > 10) pts.push({x, y});
+        if(a > alphaThreshold) pts.push({x, y});
       }
     }
     return pts;
   }
 
-  function drawCenteredText(ox, text, size, y, color='white', weight=900){
-    ox.save();
-    ox.textAlign='center';
-    ox.textBaseline='middle';
-    ox.fillStyle=color;
-    ox.font=`${weight} ${size}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
-    ox.shadowColor='rgba(255,79,216,.35)';
-    ox.shadowBlur=18;
-    ox.fillText(text, W/2, y);
-    ox.restore();
+  function drawCenteredTextNoShadow(g, text, size, y, weight=900){
+    g.save();
+    g.textAlign='center';
+    g.textBaseline='middle';
+    g.fillStyle='white';
+    g.font=`${weight} ${size}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+    g.fillText(text, W/2, y);
+    g.restore();
   }
 
-  // ====== Heart parametric points ======
-  function heartParamPoint(t){
+  // ====== Heart points (math, no raster) ======
+  function heartPoint(t){
     const x = 16*Math.pow(Math.sin(t),3);
     const y = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
     return {x, y};
   }
 
-  // Mini-heart shape (vector) centered at (0,0) scaled by s
-  function drawMiniHeartPath(g, x, y, s){
-    // un mini corazón con 2 bezier (simple y estable)
+  function buildHeartOutlinePoints(cx, cy){
+    // escalado a pantalla
+    const desired = (isMobile ? Math.min(W,H)*0.36 : Math.min(W,H)*0.40);
+    const s = desired / 34; // el corazón “mide” aprox 34 unidades en alto
+
+    const pts = [];
+    const step = isMobile ? 0.020 : 0.018;
+
+    for(let t=0; t<=Math.PI*2 + step; t+=step){
+      const p = heartPoint(t);
+      pts.push({ x: cx + p.x*s, y: cy + p.y*s });
+    }
+
+    // Para que el borde sea más “gruesito” como tiktok: duplicamos con offsets pequeños
+    const thick = isMobile ? 2 : 2.5;
+    const thickPts = [];
+    for(const p of pts){
+      thickPts.push(p);
+      thickPts.push({x:p.x+thick, y:p.y});
+      thickPts.push({x:p.x-thick, y:p.y});
+      thickPts.push({x:p.x, y:p.y+thick});
+      thickPts.push({x:p.x, y:p.y-thick});
+    }
+
+    return thickPts;
+  }
+
+  // Overlay de mini-corazones rosas (solo visual, no para target)
+  function drawMiniHeartShape(g, x, y, s){
     g.beginPath();
     g.moveTo(x, y);
     g.bezierCurveTo(x - 1.0*s, y - 1.0*s, x - 2.0*s, y + 0.8*s, x, y + 2.2*s);
@@ -205,31 +238,25 @@
     g.fill();
   }
 
-  // Corazón con mini-corazones (NO texto, estable en iPhone)
-  function drawHeartWithMiniHearts(ox, cx, cy, scale, isMobile){
-    ox.save();
-    ox.translate(cx, cy);
-    ox.scale(scale, scale);
+  function drawHeartOverlayMiniHearts(points){
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    ctx.shadowColor = 'rgba(255,79,216,.55)';
+    ctx.shadowBlur = 16;
 
-    ox.shadowColor = CFG.heartGlow;
-    ox.shadowBlur = 18;
+    // dibujamos menos corazones que puntos para que no se “rellene”
+    const stride = isMobile ? 7 : 6;
+    const size = isMobile ? 3.2 : 3.6;
 
-    const step = isMobile ? 0.05 : 0.045;      // densidad de mini-hearts
-    const mini = isMobile ? 0.78 : 0.86;       // tamaño de mini-heart
-
-    for(let t=0; t<=Math.PI*2 + 0.001; t+=step){
-      const p = heartParamPoint(t);
-
-      // pequeño jitter para look "orgánico"
-      const jx = (Math.random()-0.5)*0.55;
-      const jy = (Math.random()-0.5)*0.55;
-
-      // dos tonos alternando
-      ox.fillStyle = (Math.random() < 0.55) ? CFG.heartPink : CFG.heartPink2;
-      drawMiniHeartPath(ox, p.x + jx, p.y + jy, mini);
+    for(let i=0; i<points.length; i+=stride){
+      const p = points[i];
+      ctx.fillStyle = (Math.random() < 0.55) ? CFG.heartPink : CFG.heartPink2;
+      const jx = (Math.random()-0.5)*1.5;
+      const jy = (Math.random()-0.5)*1.5;
+      drawMiniHeartShape(ctx, p.x + jx, p.y + jy, size);
     }
 
-    ox.restore();
+    ctx.restore();
   }
 
   // ====== Particles ======
@@ -278,10 +305,9 @@
     ctx.fillStyle = CFG.particleColor;
     ctx.shadowColor = 'rgba(255,255,255,.25)';
     ctx.shadowBlur = 10;
-
     for(const p of particles){
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 1.35, 0, Math.PI*2);
+      ctx.arc(p.x, p.y, 1.28, 0, Math.PI*2);
       ctx.fill();
     }
     ctx.restore();
@@ -289,32 +315,31 @@
 
   // ====== Scenes ======
   let targets = [];
+  let heartPointsForOverlay = [];
+  let currentName = 'Mi Amor';
+
   function buildScenes(name){
-    const isMobile = W < 700;
+    currentName = name;
 
+    // 1) "1"
     const big1 = isMobile ? Math.min(W,H) * 0.34 : Math.min(W,H) * 0.42;
+    const s1 = makeTextTarget((g)=>{
+      drawCenteredTextNoShadow(g, '1', Math.floor(big1), H*0.50, 900);
+    });
+
+    // 2) You are my love (3 líneas)
     const lineSize = isMobile ? Math.floor(Math.min(W,H) * 0.13) : Math.floor(Math.min(W,H) * 0.18);
-
-    const s1 = makeTarget((ox)=>{
-      drawCenteredText(ox, '1', Math.floor(big1), H*0.50, 'white', 900);
+    const s2 = makeTextTarget((g)=>{
+      drawCenteredTextNoShadow(g, 'You',     lineSize, H*0.34, 900);
+      drawCenteredTextNoShadow(g, 'are',     lineSize, H*0.50, 900);
+      drawCenteredTextNoShadow(g, 'my love', lineSize, H*0.66, 900);
     });
 
-    const s2 = makeTarget((ox)=>{
-      drawCenteredText(ox, 'You',     lineSize, H*0.34, 'white', 900);
-      drawCenteredText(ox, 'are',     lineSize, H*0.50, 'white', 900);
-      drawCenteredText(ox, 'my love', lineSize, H*0.66, 'white', 900);
-    });
+    // 3) Corazón (target por matemáticas)
+    heartPointsForOverlay = buildHeartOutlinePoints(W/2, H*0.50);
 
-    const s3 = makeTarget((ox)=>{
-      // Corazón hecho de mini-corazones (borde)
-      const scale = isMobile ? Math.min(W,H) * 0.0125 : Math.min(W,H) * 0.0155;
-      drawHeartWithMiniHearts(ox, W/2, H*0.50, scale, isMobile);
-
-      // Texto dentro del corazón
-      const inside = isMobile ? Math.floor(Math.min(W,H) * 0.048) : Math.floor(Math.min(W,H) * 0.058);
-      drawCenteredText(ox, 'I Love You', inside, H*0.48, 'rgba(255,143,233,.98)', 800);
-      drawCenteredText(ox, name, Math.floor(inside*0.92), H*0.54, 'rgba(233,240,255,.95)', 700);
-    });
+    // para que partículas se repartan bien, hacemos un target con solo puntos del borde
+    const s3 = heartPointsForOverlay;
 
     targets = [s1, s2, s3];
   }
@@ -324,18 +349,35 @@
 
   function restart(){
     const name = (document.getElementById('name').value || 'Mi Amor').trim().slice(0,24);
-
     buildScenes(name);
 
-    const isMobile = W < 700;
     const n = isMobile ? CFG.particleCountMobile : CFG.particleCountDesktop;
     initParticles(n);
 
     scene = 0;
-    setTargets(targets[scene]);
+    setTargets(targets[0]);
     disperse();
     t0 = performance.now();
     running = true;
+  }
+
+  function drawHeartTextInside(){
+    ctx.save();
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(255,79,216,.35)';
+    ctx.shadowBlur=18;
+
+    const inside = isMobile ? Math.floor(Math.min(W,H) * 0.050) : Math.floor(Math.min(W,H) * 0.060);
+    ctx.fillStyle = 'rgba(255,143,233,.98)';
+    ctx.font = `900 ${inside}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+    ctx.fillText('I Love You', W/2, H*0.48);
+
+    ctx.shadowBlur=10;
+    ctx.fillStyle = 'rgba(233,240,255,.95)';
+    ctx.font = `800 ${Math.floor(inside*0.92)}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+    ctx.fillText(currentName, W/2, H*0.54);
+    ctx.restore();
   }
 
   function loop(now){
@@ -344,26 +386,32 @@
     drawMatrix();
     const elapsed = (now - t0) / 1000;
 
-    // 0-2.5s: "1"
-    // 2.5-7.5s: "You are my love"
-    // 7.5-12.5s: heart
-    // 12.5+: hold
     if(elapsed < 2.5){
       if(scene !== 0){ scene = 0; setTargets(targets[0]); disperse(); }
       stepParticles(1.0);
-      drawParticles(0.95);
+      drawParticles(0.98);
+
     } else if(elapsed < 7.5){
       if(scene !== 1){ scene = 1; setTargets(targets[1]); disperse(); }
       stepParticles(1.0);
-      drawParticles(0.95);
+      drawParticles(0.98);
+
     } else if(elapsed < 12.5){
       if(scene !== 2){ scene = 2; setTargets(targets[2]); disperse(); }
       stepParticles(1.0);
-      drawParticles(0.98);
+      drawParticles(0.99);
+
+      // overlay del borde rosa tipo tiktok
+      drawHeartOverlayMiniHearts(heartPointsForOverlay);
+      drawHeartTextInside();
+
     } else {
       stepParticles(0.55);
       const pulse = 0.90 + 0.08*Math.sin(elapsed*2.2);
       drawParticles(pulse);
+
+      drawHeartOverlayMiniHearts(heartPointsForOverlay);
+      drawHeartTextInside();
     }
 
     requestAnimationFrame(loop);
