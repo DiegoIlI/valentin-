@@ -97,7 +97,10 @@
     particleCountDesktop: 1700,
     particleCountMobile: 1300,
     settleSpeed: 0.075,
-    heartStroke: 'rgba(255,79,216,.95)',
+
+    // corazón mini-hearts
+    heartPink: 'rgba(255,79,216,.95)',
+    heartGlow: 'rgba(255,79,216,.55)',
   };
 
   // ====== Resize ======
@@ -161,7 +164,6 @@
     const img = ox.getImageData(0,0,W,H).data;
     const pts = [];
 
-    // step adaptativo
     const step = Math.max(3, Math.round(Math.min(W,H)/260));
     for(let y=0;y<H;y+=step){
       for(let x=0;x<W;x+=step){
@@ -184,24 +186,38 @@
     ox.restore();
   }
 
-  function drawHeart(ox, cx, cy, s){
-    ox.save();
-    ox.translate(cx, cy);
-    ox.scale(s, s);
-
-    ox.beginPath();
-    for(let t=0;t<=Math.PI*2+0.02;t+=0.02){
+  // ====== Corazón hecho de mini-corazones (como TikTok) ======
+  function drawHeartWithMiniHearts(ox, cx, cy, scale, heartGlyphSizePx){
+    // corazón paramétrico (mismo shape), pero lo "pintamos" con muchos corazoncitos
+    const pts = [];
+    for(let t=0;t<=Math.PI*2+0.01;t+=0.035){
       const x = 16*Math.pow(Math.sin(t),3);
       const y = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
-      if(t===0) ox.moveTo(x,y); else ox.lineTo(x,y);
+      pts.push({x, y});
     }
-    ox.closePath();
 
-    ox.lineWidth = 1.8;
-    ox.strokeStyle = CFG.heartStroke;
-    ox.shadowColor='rgba(255,79,216,.55)';
-    ox.shadowBlur=18;
-    ox.stroke();
+    ox.save();
+    ox.translate(cx, cy);
+    ox.scale(scale, scale);
+
+    // mini hearts
+    ox.textAlign = 'center';
+    ox.textBaseline = 'middle';
+    ox.fillStyle = CFG.heartPink;
+    ox.shadowColor = CFG.heartGlow;
+    ox.shadowBlur = 18;
+
+    // Usamos ♥ para compatibilidad (emoji ❤️ a veces cambia color)
+    ox.font = `800 ${heartGlyphSizePx}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+
+    for(let i=0;i<pts.length;i++){
+      const p = pts[i];
+      // un poquito de random para que se vea orgánico
+      const jx = (Math.random()-0.5)*0.6;
+      const jy = (Math.random()-0.5)*0.6;
+      ox.fillText('♥', p.x + jx, p.y + jy);
+    }
+
     ox.restore();
   }
 
@@ -279,9 +295,15 @@
     });
 
     const s3 = makeTarget((ox)=>{
+      // Corazón como el video (mini-corazones)
       const scale = isMobile ? Math.min(W,H) * 0.0125 : Math.min(W,H) * 0.0155;
-      drawHeart(ox, W/2, H*0.50, scale);
 
+      // tamaño de cada mini-corazón (en unidades del corazón)
+      // (ojo: como estamos dentro de ox.scale(scale), esto se siente más orgánico)
+      const glyph = isMobile ? 3.3 : 3.8;
+      drawHeartWithMiniHearts(ox, W/2, H*0.50, scale, glyph);
+
+      // Texto dentro
       const inside = isMobile ? Math.floor(Math.min(W,H) * 0.048) : Math.floor(Math.min(W,H) * 0.058);
       drawCenteredText(ox, 'I Love You', inside, H*0.48, 'rgba(255,143,233,.98)', 800);
       drawCenteredText(ox, name, Math.floor(inside*0.92), H*0.54, 'rgba(233,240,255,.95)', 700);
