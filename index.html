@@ -77,17 +77,25 @@ if(drops[i]>H) drops[i]=0;
 
 // LED TEXT
 function drawLedText(text,y){
+const off=document.createElement("canvas");
+off.width=W;
+off.height=H;
+const ox=off.getContext("2d");
+
+ox.fillStyle="black";
+ox.fillRect(0,0,W,H);
+
+ox.fillStyle="white";
+ox.font="900 "+Math.min(W,H)*0.18+"px system-ui";
+ox.textAlign="center";
+ox.textBaseline="middle";
+ox.fillText(text,W/2,y);
+
+const img=ox.getImageData(0,0,W,H);
+
 ctx.save();
 ctx.fillStyle="white";
-ctx.font="900 "+Math.min(W,H)*0.18+"px system-ui";
-ctx.textAlign="center";
-ctx.textBaseline="middle";
-ctx.fillText(text,W/2,y);
 
-const img=ctx.getImageData(0,0,W,H);
-ctx.clearRect(0,0,W,H);
-
-ctx.fillStyle="white";
 for(let yy=0;yy<H;yy+=7){
 for(let xx=0;xx<W;xx+=7){
 let index=(yy*W+xx)*4+3;
@@ -98,6 +106,7 @@ ctx.fill();
 }
 }
 }
+
 ctx.restore();
 }
 
