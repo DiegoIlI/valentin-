@@ -1,51 +1,31 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>💘 14 Febrero</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>💘 14 de Febrero</title>
 
 <style>
 html,body{
-  margin:0;
-  height:100%;
-  background:#05060a;
-  overflow:hidden;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+margin:0;
+height:100%;
+background:#05060a;
+overflow:hidden;
+font-family:system-ui;
 }
 canvas{
-  position:fixed;
-  inset:0;
+position:fixed;
+inset:0;
+width:100%;
+height:100%;
 }
 .ui{
-  position:fixed;
-  top:18px;
-  left:50%;
-  transform:translateX(-50%);
-  display:flex;
-  gap:10px;
-  background:rgba(10,12,20,.65);
-  padding:10px 18px;
-  border-radius:999px;
-  backdrop-filter:blur(15px);
-  color:#fff;
-  z-index:5;
-}
-.ui input{
-  border:none;
-  background:transparent;
-  color:white;
-  font-weight:700;
-  width:130px;
-  outline:none;
-}
-.ui button{
-  background:white;
-  color:black;
-  border:none;
-  border-radius:999px;
-  padding:6px 12px;
-  font-weight:800;
+position:fixed;
+top:15px;
+left:15px;
+z-index:10;
+color:white;
+font-weight:700;
 }
 </style>
 </head>
@@ -53,152 +33,150 @@ canvas{
 
 <canvas id="c"></canvas>
 
-<div class="ui">
-  Para:
-  <input id="name" value="Misita❤️"/>
-  <button onclick="restart()">▶</button>
-</div>
-
 <script>
 const canvas=document.getElementById("c");
 const ctx=canvas.getContext("2d");
 
-let W,H,DPR;
+let W,H;
 function resize(){
-  DPR=Math.min(2,window.devicePixelRatio||1);
-  W=innerWidth;
-  H=innerHeight;
-  canvas.width=W*DPR;
-  canvas.height=H*DPR;
-  canvas.style.width=W+"px";
-  canvas.style.height=H+"px";
-  ctx.setTransform(DPR,0,0,DPR,0,0);
+W=canvas.width=window.innerWidth;
+H=canvas.height=window.innerHeight;
 }
 resize();
 addEventListener("resize",resize);
 
-// ===== MATRIX =====
-let columns=Math.floor(innerWidth/18);
-let drops=Array(columns).fill(1);
+// MATRIX
+const letters="アイウエオカキクケコサシスセソタチツテトナニヌネノABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const fontSize=18;
+let columns;
+let drops;
+
+function initMatrix(){
+columns=Math.floor(W/fontSize);
+drops=[];
+for(let i=0;i<columns;i++){
+drops[i]=Math.random()*H;
+}
+}
+initMatrix();
 
 function drawMatrix(){
-  ctx.fillStyle="rgba(5,6,10,.15)";
-  ctx.fillRect(0,0,W,H);
+ctx.fillStyle="rgba(5,6,10,0.08)";
+ctx.fillRect(0,0,W,H);
 
-  ctx.fillStyle="rgba(255,80,200,.7)";
-  ctx.font="16px monospace";
+ctx.fillStyle="rgba(255,70,170,0.8)";
+ctx.font=fontSize+"px monospace";
 
-  for(let i=0;i<drops.length;i++){
-    let char=String.fromCharCode(0x30A0+Math.random()*96);
-    let x=i*18;
-    let y=drops[i]*18;
-    ctx.fillText(char,x,y);
-    if(y>H && Math.random()>0.975) drops[i]=0;
-    drops[i]++;
-  }
+for(let i=0;i<drops.length;i++){
+const text=letters[Math.floor(Math.random()*letters.length)];
+ctx.fillText(text,i*fontSize,drops[i]);
+drops[i]+=fontSize*1.1;
+if(drops[i]>H) drops[i]=0;
+}
 }
 
-// ===== LED TEXT =====
-function drawLedText(text,size,y){
-  ctx.font="900 "+size+"px system-ui";
-  ctx.textAlign="center";
-  ctx.textBaseline="middle";
+// LED TEXT
+function drawLedText(text,y){
+ctx.save();
+ctx.fillStyle="white";
+ctx.font="900 "+Math.min(W,H)*0.18+"px system-ui";
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+ctx.fillText(text,W/2,y);
 
-  // dibujamos texto invisible para medir
-  const temp=document.createElement("canvas");
-  const tctx=temp.getContext("2d");
-  temp.width=W;
-  temp.height=H;
-  tctx.font="900 "+size+"px system-ui";
-  tctx.textAlign="center";
-  tctx.textBaseline="middle";
-  tctx.fillText(text,W/2,y);
+const img=ctx.getImageData(0,0,W,H);
+ctx.clearRect(0,0,W,H);
 
-  const data=tctx.getImageData(0,0,W,H).data;
-
-  ctx.fillStyle="white";
-  ctx.shadowColor="white";
-  ctx.shadowBlur=25;
-
-  for(let yy=0;yy<H;yy+=6){
-    for(let xx=0;xx<W;xx+=6){
-      let alpha=data[(yy*W+xx)*4+3];
-      if(alpha>100){
-        ctx.beginPath();
-        ctx.arc(xx,yy,2.3,0,Math.PI*2);
-        ctx.fill();
-      }
-    }
-  }
-  ctx.shadowBlur=0;
+ctx.fillStyle="white";
+for(let yy=0;yy<H;yy+=7){
+for(let xx=0;xx<W;xx+=7){
+let index=(yy*W+xx)*4+3;
+if(img.data[index]>150){
+ctx.beginPath();
+ctx.arc(xx,yy,3.2,0,Math.PI*2);
+ctx.fill();
+}
+}
+}
+ctx.restore();
 }
 
-// ===== LED HEART =====
-function drawLedHeart(scale,pulse){
-  const cx=W/2;
-  const cy=H*0.55;
+// SOLID HEART
+function drawHeartSolid(pulse,name){
+const cx=W/2;
+const cy=H*0.55;
+const scale=Math.min(W,H)*0.013*pulse;
 
-  ctx.fillStyle="white";
-  ctx.shadowColor="white";
-  ctx.shadowBlur=35;
+ctx.save();
+ctx.translate(cx,cy);
+ctx.scale(scale,scale);
 
-  for(let t=0;t<Math.PI*2;t+=0.03){
-    let x=16*Math.pow(Math.sin(t),3);
-    let y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
-    x*=scale*pulse;
-    y*=scale*pulse;
-    ctx.beginPath();
-    ctx.arc(cx+x,cy+y,2.5,0,Math.PI*2);
-    ctx.fill();
-  }
+ctx.beginPath();
+for(let t=0;t<=Math.PI*2;t+=0.02){
+let x=16*Math.pow(Math.sin(t),3);
+let y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
+if(t===0) ctx.moveTo(x,y);
+else ctx.lineTo(x,y);
+}
+ctx.closePath();
 
-  ctx.shadowBlur=0;
+ctx.fillStyle="rgba(255,60,160,0.95)";
+ctx.shadowColor="rgba(255,60,160,0.9)";
+ctx.shadowBlur=80;
+ctx.fill();
+ctx.restore();
+
+// TEXT INSIDE HEART
+ctx.save();
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+ctx.fillStyle="white";
+ctx.shadowColor="rgba(255,255,255,0.8)";
+ctx.shadowBlur=25;
+
+ctx.font="900 "+Math.min(W,H)*0.07+"px system-ui";
+ctx.fillText("TE ADORO",W/2,H*0.50);
+
+ctx.font="800 "+Math.min(W,H)*0.055+"px system-ui";
+ctx.fillText(name,W/2,H*0.62);
+
+ctx.restore();
 }
 
-// ===== SCENES =====
-let scene=0;
-let start=0;
-let name="Misita❤️";
-const time=1500;
-
-function restart(){
-  name=document.getElementById("name").value||"Mi Amor";
-  scene=0;
-  start=performance.now();
-}
-
-function update(now){
-  if(scene<6 && now-start>time){
-    scene++;
-    start=now;
-  }
-}
+// TIMELINE
+let start=performance.now();
+let name="MISA ❤️";
 
 function loop(now){
-  drawMatrix();
-  update(now);
+drawMatrix();
+let t=(now-start)/1000;
 
-  const big=Math.min(W,H)*0.4;
-  const mid=Math.min(W,H)*0.16;
-
-  switch(scene){
-    case 0: drawLedText("1",big,H*0.5); break;
-    case 1: drawLedText("2",big,H*0.5); break;
-    case 2: drawLedText("3",big,H*0.5); break;
-    case 3: drawLedText("You",mid,H*0.4); break;
-    case 4: drawLedText("Are",mid,H*0.5); break;
-    case 5: drawLedText("My Love",mid,H*0.6); break;
-    default:
-      let pulse=1+0.08*Math.sin(now*0.006);
-      drawLedHeart(Math.min(W,H)*0.018,pulse);
-      drawLedText("TE ADORO",Math.min(W,H)*0.07,H*0.48);
-      drawLedText(name,Math.min(W,H)*0.05,H*0.65);
-  }
-
-  requestAnimationFrame(loop);
+if(t<2){
+drawLedText("1",H/2);
+}
+else if(t<4){
+drawLedText("2",H/2);
+}
+else if(t<6){
+drawLedText("3",H/2);
+}
+else if(t<8){
+drawLedText("YOU",H/2);
+}
+else if(t<10){
+drawLedText("ARE",H/2);
+}
+else if(t<12){
+drawLedText("MY LOVE",H/2);
+}
+else{
+let pulse=1+Math.sin(t*2)*0.05;
+drawHeartSolid(pulse,name);
 }
 
-restart();
+requestAnimationFrame(loop);
+}
+
 requestAnimationFrame(loop);
 </script>
 
