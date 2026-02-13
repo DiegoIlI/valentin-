@@ -25,28 +25,28 @@ canvas{
   transform:translateX(-50%);
   display:flex;
   gap:10px;
-  background:rgba(10,12,20,.6);
-  padding:10px 15px;
+  background:rgba(10,12,20,.65);
+  padding:10px 18px;
   border-radius:999px;
-  backdrop-filter:blur(10px);
-  z-index:5;
+  backdrop-filter:blur(15px);
   color:#fff;
+  z-index:5;
 }
 .ui input{
   border:none;
   background:transparent;
   color:white;
   font-weight:700;
-  width:120px;
+  width:130px;
   outline:none;
 }
 .ui button{
-  background:#ff4fd8;
+  background:linear-gradient(45deg,#ff4fd8,#ff8fe9);
   border:none;
   color:white;
   border-radius:999px;
-  padding:5px 10px;
-  font-weight:700;
+  padding:6px 12px;
+  font-weight:800;
 }
 </style>
 </head>
@@ -78,7 +78,15 @@ function resize(){
 resize();
 addEventListener("resize",resize);
 
-// ===== MATRIX BACKGROUND =====
+// ===== MATRIX EFECTO BONITO =====
+let columns;
+let drops=[];
+function initMatrix(){
+  columns = Math.floor(W/18);
+  drops = Array(columns).fill(1);
+}
+initMatrix();
+
 function drawMatrix(){
   ctx.fillStyle="rgba(5,6,10,.12)";
   ctx.fillRect(0,0,W,H);
@@ -86,27 +94,34 @@ function drawMatrix(){
   ctx.fillStyle="rgba(255,79,216,.8)";
   ctx.font="16px monospace";
 
-  for(let i=0;i<60;i++){
-    let x=Math.random()*W;
-    let y=Math.random()*H;
-    ctx.fillText(String.fromCharCode(0x30A0+Math.random()*96),x,y);
+  for(let i=0;i<drops.length;i++){
+    let text=String.fromCharCode(0x30A0+Math.random()*96);
+    let x=i*18;
+    let y=drops[i]*18;
+
+    ctx.fillText(text,x,y);
+
+    if(y>H && Math.random()>0.975){
+      drops[i]=0;
+    }
+    drops[i]++;
   }
 }
 
-// ===== TEXT =====
-function drawCenterText(text,size,y){
+// ===== TEXTO BRILLANTE =====
+function drawText(text,size,y){
   ctx.save();
-  ctx.fillStyle="white";
   ctx.textAlign="center";
   ctx.textBaseline="middle";
   ctx.font="900 "+size+"px system-ui";
-  ctx.shadowColor="rgba(255,79,216,.7)";
-  ctx.shadowBlur=25;
+  ctx.fillStyle="white";
+  ctx.shadowColor="rgba(255,79,216,.9)";
+  ctx.shadowBlur=40;
   ctx.fillText(text,W/2,y);
   ctx.restore();
 }
 
-// ===== HEART =====
+// ===== CORAZÓN PRO =====
 function drawHeart(cx,cy,scale,pulse){
   ctx.save();
   ctx.translate(cx,cy);
@@ -122,64 +137,63 @@ function drawHeart(cx,cy,scale,pulse){
   ctx.closePath();
 
   ctx.fillStyle="rgba(255,79,216,.95)";
-  ctx.shadowColor="rgba(255,79,216,.8)";
-  ctx.shadowBlur=40;
+  ctx.shadowColor="rgba(255,79,216,.9)";
+  ctx.shadowBlur=60;
   ctx.fill();
+
   ctx.restore();
 }
 
-// ===== SCENE CONTROLLER =====
-let scene = 0;
-let sceneStart = 0;
+// ===== ESCENAS =====
+let scene=0;
+let sceneStart=0;
 let name="Mi Amor";
-
-const sceneDuration = 1500; // 1.5 segundos cada escena
+const sceneTime=1500;
 
 function restart(){
-  name = document.getElementById("name").value || "Mi Amor";
-  scene = 0;
-  sceneStart = performance.now();
+  name=document.getElementById("name").value||"Mi Amor";
+  scene=0;
+  sceneStart=performance.now();
 }
 
 function updateScene(now){
-  if(scene < 6 && now - sceneStart > sceneDuration){
+  if(scene<6 && now-sceneStart>sceneTime){
     scene++;
-    sceneStart = now;
+    sceneStart=now;
   }
 }
 
-// ===== LOOP =====
 function loop(now){
   drawMatrix();
   updateScene(now);
 
-  const sizeBig = Math.min(W,H)*0.35;
-  const sizeMid = Math.min(W,H)*0.16;
+  const big=Math.min(W,H)*0.38;
+  const mid=Math.min(W,H)*0.16;
 
   switch(scene){
     case 0:
-      drawCenterText("1", sizeBig, H*0.5);
+      drawText("1",big,H*0.5);
       break;
     case 1:
-      drawCenterText("2", sizeBig, H*0.5);
+      drawText("2",big,H*0.5);
       break;
     case 2:
-      drawCenterText("3", sizeBig, H*0.5);
+      drawText("3",big,H*0.5);
       break;
     case 3:
-      drawCenterText("You", sizeMid, H*0.4);
+      drawText("You",mid,H*0.4);
       break;
     case 4:
-      drawCenterText("Are", sizeMid, H*0.5);
+      drawText("Are",mid,H*0.5);
       break;
     case 5:
-      drawCenterText("My Love", sizeMid, H*0.6);
+      drawText("My Sunshine",mid,H*0.6);
       break;
     default:
-      let pulse = 1 + 0.08*Math.sin(now*0.005);
-      drawHeart(W/2,H*0.5,Math.min(W,H)*0.012,pulse);
-      drawCenterText("I Love You", Math.min(W,H)*0.06, H*0.48);
-      drawCenterText(name, Math.min(W,H)*0.05, H*0.56);
+      let pulse=1+0.08*Math.sin(now*0.006);
+      drawHeart(W/2,H*0.5,Math.min(W,H)*0.013,pulse);
+      drawText("I Love You",Math.min(W,H)*0.07,H*0.48);
+      drawText(name,Math.min(W,H)*0.055,H*0.58);
   }
 
   requestAnimationFrame(loop);
