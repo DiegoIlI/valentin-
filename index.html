@@ -1,435 +1,193 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>💘 14 de Febrero</title>
-  <style>
-    :root{
-      --bg:#05060a;
-      --pink:#ff4fd8;
-      --pink2:#ff8fe9;
-      --text:#e9f0ff;
-    }
-    html,body{height:100%; margin:0; background:var(--bg); overflow:hidden; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;}
-    #wrap{position:fixed; inset:0; display:block;}
-    canvas{position:absolute; inset:0; width:100%; height:100%;}
-    .ui{
-      position:fixed; left:0; right:0; top:0;
-      display:flex; justify-content:space-between; align-items:center;
-      padding:12px 14px; gap:10px;
-      pointer-events:none;
-      color:rgba(233,240,255,.9);
-      text-shadow:0 2px 10px rgba(0,0,0,.6);
-      font-weight:700;
-      z-index:5;
-    }
-    .pill{
-      pointer-events:auto;
-      backdrop-filter: blur(10px);
-      background: rgba(10,12,20,.45);
-      border: 1px solid rgba(255,255,255,.10);
-      padding:10px 12px;
-      border-radius:999px;
-      display:flex; align-items:center; gap:10px;
-      box-shadow: 0 10px 25px rgba(0,0,0,.25);
-    }
-    .pill input{
-      width: 150px; max-width: 46vw;
-      border:none; outline:none;
-      background:transparent;
-      color: var(--text);
-      font-weight:800;
-    }
-    .pill button{
-      border:none; outline:none; cursor:pointer;
-      color: var(--text);
-      background: rgba(255,79,216,.18);
-      border:1px solid rgba(255,79,216,.35);
-      padding:8px 10px;
-      border-radius:999px;
-      font-weight:900;
-    }
-    .hint{
-      pointer-events:none;
-      opacity:.75;
-      font-weight:700;
-      font-size:12px;
-      line-height:1.2;
-      text-align:right;
-    }
-    @media (max-width:520px){
-      .hint{display:none;}
-      .pill input{width: 120px;}
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>💘 14 Febrero</title>
+
+<style>
+html,body{
+  margin:0;
+  height:100%;
+  background:#05060a;
+  overflow:hidden;
+  overscroll-behavior:none;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+canvas{
+  position:fixed;
+  inset:0;
+}
+.ui{
+  position:fixed;
+  top:15px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:10px;
+  background:rgba(10,12,20,.6);
+  padding:10px 15px;
+  border-radius:999px;
+  backdrop-filter:blur(10px);
+  z-index:5;
+  color:#fff;
+}
+.ui input{
+  border:none;
+  background:transparent;
+  color:white;
+  font-weight:700;
+  width:120px;
+  outline:none;
+}
+.ui button{
+  background:#ff4fd8;
+  border:none;
+  color:white;
+  border-radius:999px;
+  padding:5px 10px;
+  font-weight:700;
+}
+</style>
 </head>
 <body>
-  <div id="wrap">
-    <canvas id="c"></canvas>
-  </div>
 
-  <div class="ui">
-    <div class="pill">
-      <span>Para:</span>
-      <input id="name" value="Misita" maxlength="24" />
-      <button id="go">▶</button>
-    </div>
-    <div class="hint">
-      Toca/clic para reiniciar
-    </div>
-  </div>
+<canvas id="c"></canvas>
+
+<div class="ui">
+  Para:
+  <input id="name" value="Misita❤️"/>
+  <button onclick="restart()">▶</button>
+</div>
 
 <script>
-(() => {
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d', { alpha: true });
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
 
-  // ====== Config ======
-  const CFG = {
-    matrixSpeed: 1.18,
-    matrixFont: 16,
-    matrixFade: 0.085,
-    matrixColor: 'rgba(255,79,216,0.85)',
-    glowColor: 'rgba(255,79,216,0.55)',
+let W,H,DPR;
+function resize(){
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = innerWidth;
+  H = innerHeight;
+  canvas.width = W*DPR;
+  canvas.height = H*DPR;
+  canvas.style.width = W+"px";
+  canvas.style.height = H+"px";
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+resize();
+addEventListener("resize",resize);
 
-    particleColor: 'rgba(255,255,255,0.95)',
-    particleCountDesktop: 2000,
-    particleCountMobile: 1550,
-    settleSpeed: 0.085,
+// ===== MATRIX BACKGROUND =====
+function drawMatrix(){
+  ctx.fillStyle="rgba(5,6,10,.12)";
+  ctx.fillRect(0,0,W,H);
 
-    // overlay mini-hearts
-    heartPink: 'rgba(255,79,216,.95)',
-    heartPink2: 'rgba(255,143,233,.85)',
-  };
+  ctx.fillStyle="rgba(255,79,216,.8)";
+  ctx.font="16px monospace";
 
-  // ====== Resize ======
-  let W=0, H=0, DPR=1, isMobile=false;
-  function resize(){
-    DPR = Math.min(2, window.devicePixelRatio || 1);
-    W = Math.floor(innerWidth);
-    H = Math.floor(innerHeight);
-    isMobile = W < 700;
-
-    canvas.width = Math.floor(W * DPR);
-    canvas.height = Math.floor(H * DPR);
-    canvas.style.width = W+'px';
-    canvas.style.height = H+'px';
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-
-    matrixInit();
+  for(let i=0;i<60;i++){
+    let x=Math.random()*W;
+    let y=Math.random()*H;
+    ctx.fillText(String.fromCharCode(0x30A0+Math.random()*96),x,y);
   }
-  addEventListener('resize', resize, {passive:true});
+}
 
-  // ====== Matrix rain ======
-  const chars = ('01アイウエオカキクケコサシスセソタチツテトナニヌネノ' +
-                 'ハヒフヘホマミムメモヤユヨラリルレロワヲン' +
-                 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' +
-                 '0123456789@#$%&*+-=?<>').split('');
-  let columns=0, drops=[];
-  function matrixInit(){
-    const fs = CFG.matrixFont;
-    columns = Math.ceil(W / fs);
-    drops = new Array(columns).fill(0).map(()=>Math.random()*H);
+// ===== TEXT =====
+function drawCenterText(text,size,y){
+  ctx.save();
+  ctx.fillStyle="white";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.font="900 "+size+"px system-ui";
+  ctx.shadowColor="rgba(255,79,216,.7)";
+  ctx.shadowBlur=25;
+  ctx.fillText(text,W/2,y);
+  ctx.restore();
+}
+
+// ===== HEART =====
+function drawHeart(cx,cy,scale,pulse){
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.scale(scale*pulse,scale*pulse);
+
+  ctx.beginPath();
+  for(let t=0;t<=Math.PI*2;t+=0.02){
+    let x=16*Math.pow(Math.sin(t),3);
+    let y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
+    if(t===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
   }
+  ctx.closePath();
 
-  function drawMatrix(){
-    ctx.fillStyle = `rgba(5,6,10,${CFG.matrixFade})`;
-    ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="rgba(255,79,216,.95)";
+  ctx.shadowColor="rgba(255,79,216,.8)";
+  ctx.shadowBlur=40;
+  ctx.fill();
+  ctx.restore();
+}
 
-    ctx.font = `${CFG.matrixFont}px monospace`;
-    for(let i=0;i<columns;i++){
-      const x = i*CFG.matrixFont;
-      const y = drops[i];
-      const ch = chars[(Math.random()*chars.length)|0];
+// ===== SCENE CONTROLLER =====
+let scene = 0;
+let sceneStart = 0;
+let name="Mi Amor";
 
-      ctx.fillStyle = CFG.matrixColor;
-      ctx.shadowColor = CFG.glowColor;
-      ctx.shadowBlur = 12;
-      ctx.fillText(ch, x, y);
+const sceneDuration = 1500; // 1.5 segundos cada escena
 
-      drops[i] += CFG.matrixFont * CFG.matrixSpeed;
-      if(drops[i] > H + Math.random()*420) drops[i] = -Math.random()*300;
-    }
-    ctx.shadowBlur = 0;
+function restart(){
+  name = document.getElementById("name").value || "Mi Amor";
+  scene = 0;
+  sceneStart = performance.now();
+}
+
+function updateScene(now){
+  if(scene < 6 && now - sceneStart > sceneDuration){
+    scene++;
+    sceneStart = now;
   }
+}
 
-  // ====== Offscreen for crisp text targets (NO SHADOW) ======
-  const off = document.createElement('canvas');
-  const ox = off.getContext('2d');
+// ===== LOOP =====
+function loop(now){
+  drawMatrix();
+  updateScene(now);
 
-  function makeTextTarget(drawFn){
-    // Importante: sin blur, sin sombras, sin glow -> letras nítidas
-    off.width = W;
-    off.height = H;
-    ox.clearRect(0,0,W,H);
-    ox.fillStyle = 'black';
-    ox.fillRect(0,0,W,H);
+  const sizeBig = Math.min(W,H)*0.35;
+  const sizeMid = Math.min(W,H)*0.16;
 
-    drawFn(ox);
-
-    const img = ox.getImageData(0,0,W,H).data;
-    const pts = [];
-
-    // step más fino en móvil para que no se vuelva bloque
-    const step = isMobile ? 2 : 3;
-    const alphaThreshold = 40; // solo pixels “firmes”
-
-    for(let y=0; y<H; y+=step){
-      for(let x=0; x<W; x+=step){
-        const a = img[(y*W + x)*4 + 3];
-        if(a > alphaThreshold) pts.push({x, y});
-      }
-    }
-    return pts;
-  }
-
-  function drawCenteredTextNoShadow(g, text, size, y, weight=900){
-    g.save();
-    g.textAlign='center';
-    g.textBaseline='middle';
-    g.fillStyle='white';
-    g.font=`${weight} ${size}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
-    g.fillText(text, W/2, y);
-    g.restore();
-  }
-
-  // ====== Heart points (math, no raster) ======
-  function heartPoint(t){
-    const x = 16*Math.pow(Math.sin(t),3);
-    const y = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
-    return {x, y};
-  }
-
-  function buildHeartOutlinePoints(cx, cy){
-    // escalado a pantalla
-    const desired = (isMobile ? Math.min(W,H)*0.36 : Math.min(W,H)*0.40);
-    const s = desired / 34; // el corazón “mide” aprox 34 unidades en alto
-
-    const pts = [];
-    const step = isMobile ? 0.020 : 0.018;
-
-    for(let t=0; t<=Math.PI*2 + step; t+=step){
-      const p = heartPoint(t);
-      pts.push({ x: cx + p.x*s, y: cy + p.y*s });
-    }
-
-    // Para que el borde sea más “gruesito” como tiktok: duplicamos con offsets pequeños
-    const thick = isMobile ? 2 : 2.5;
-    const thickPts = [];
-    for(const p of pts){
-      thickPts.push(p);
-      thickPts.push({x:p.x+thick, y:p.y});
-      thickPts.push({x:p.x-thick, y:p.y});
-      thickPts.push({x:p.x, y:p.y+thick});
-      thickPts.push({x:p.x, y:p.y-thick});
-    }
-
-    return thickPts;
+  switch(scene){
+    case 0:
+      drawCenterText("1", sizeBig, H*0.5);
+      break;
+    case 1:
+      drawCenterText("2", sizeBig, H*0.5);
+      break;
+    case 2:
+      drawCenterText("3", sizeBig, H*0.5);
+      break;
+    case 3:
+      drawCenterText("You", sizeMid, H*0.4);
+      break;
+    case 4:
+      drawCenterText("Are", sizeMid, H*0.5);
+      break;
+    case 5:
+      drawCenterText("My Love", sizeMid, H*0.6);
+      break;
+    default:
+      let pulse = 1 + 0.08*Math.sin(now*0.005);
+      drawHeart(W/2,H*0.5,Math.min(W,H)*0.012,pulse);
+      drawCenterText("I Love You", Math.min(W,H)*0.06, H*0.48);
+      drawCenterText(name, Math.min(W,H)*0.05, H*0.56);
   }
 
-  // Overlay de mini-corazones rosas (solo visual, no para target)
-  function drawMiniHeartShape(g, x, y, s){
-    g.beginPath();
-    g.moveTo(x, y);
-    g.bezierCurveTo(x - 1.0*s, y - 1.0*s, x - 2.0*s, y + 0.8*s, x, y + 2.2*s);
-    g.bezierCurveTo(x + 2.0*s, y + 0.8*s, x + 1.0*s, y - 1.0*s, x, y);
-    g.closePath();
-    g.fill();
-  }
-
-  function drawHeartOverlayMiniHearts(points){
-    ctx.save();
-    ctx.globalAlpha = 0.95;
-    ctx.shadowColor = 'rgba(255,79,216,.55)';
-    ctx.shadowBlur = 16;
-
-    // dibujamos menos corazones que puntos para que no se “rellene”
-    const stride = isMobile ? 7 : 6;
-    const size = isMobile ? 3.2 : 3.6;
-
-    for(let i=0; i<points.length; i+=stride){
-      const p = points[i];
-      ctx.fillStyle = (Math.random() < 0.55) ? CFG.heartPink : CFG.heartPink2;
-      const jx = (Math.random()-0.5)*1.5;
-      const jy = (Math.random()-0.5)*1.5;
-      drawMiniHeartShape(ctx, p.x + jx, p.y + jy, size);
-    }
-
-    ctx.restore();
-  }
-
-  // ====== Particles ======
-  let particles=[];
-  function initParticles(n){
-    particles = new Array(n).fill(0).map(()=>({
-      x: Math.random()*W,
-      y: Math.random()*H,
-      vx:(Math.random()-0.5)*2,
-      vy:(Math.random()-0.5)*2,
-      tx: Math.random()*W,
-      ty: Math.random()*H,
-    }));
-  }
-
-  function setTargets(points){
-    for(let i=0;i<particles.length;i++){
-      const p = particles[i];
-      const t = points[i % points.length];
-      p.tx = t.x; p.ty = t.y;
-    }
-  }
-
-  function stepParticles(k){
-    const s = CFG.settleSpeed * k;
-    for(const p of particles){
-      const dx = p.tx - p.x;
-      const dy = p.ty - p.y;
-      p.vx = p.vx*0.86 + dx*s;
-      p.vy = p.vy*0.86 + dy*s;
-      p.x += p.vx;
-      p.y += p.vy;
-    }
-  }
-
-  function disperse(){
-    for(const p of particles){
-      p.vx += (Math.random()-0.5)*8;
-      p.vy += (Math.random()-0.5)*8;
-    }
-  }
-
-  function drawParticles(alpha=1){
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = CFG.particleColor;
-    ctx.shadowColor = 'rgba(255,255,255,.25)';
-    ctx.shadowBlur = 10;
-    for(const p of particles){
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 1.28, 0, Math.PI*2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-
-  // ====== Scenes ======
-  let targets = [];
-  let heartPointsForOverlay = [];
-  let currentName = 'Mi Amor';
-
-  function buildScenes(name){
-    currentName = name;
-
-    // 1) "1"
-    const big1 = isMobile ? Math.min(W,H) * 0.34 : Math.min(W,H) * 0.42;
-    const s1 = makeTextTarget((g)=>{
-      drawCenteredTextNoShadow(g, '1', Math.floor(big1), H*0.50, 900);
-    });
-
-    // 2) You are my love (3 líneas)
-    const lineSize = isMobile ? Math.floor(Math.min(W,H) * 0.13) : Math.floor(Math.min(W,H) * 0.18);
-    const s2 = makeTextTarget((g)=>{
-      drawCenteredTextNoShadow(g, 'You',     lineSize, H*0.34, 900);
-      drawCenteredTextNoShadow(g, 'are',     lineSize, H*0.50, 900);
-      drawCenteredTextNoShadow(g, 'my love', lineSize, H*0.66, 900);
-    });
-
-    // 3) Corazón (target por matemáticas)
-    heartPointsForOverlay = buildHeartOutlinePoints(W/2, H*0.50);
-
-    // para que partículas se repartan bien, hacemos un target con solo puntos del borde
-    const s3 = heartPointsForOverlay;
-
-    targets = [s1, s2, s3];
-  }
-
-  // ====== Timeline ======
-  let t0=0, running=true, scene=0;
-
-  function restart(){
-    const name = (document.getElementById('name').value || 'Mi Amor').trim().slice(0,24);
-    buildScenes(name);
-
-    const n = isMobile ? CFG.particleCountMobile : CFG.particleCountDesktop;
-    initParticles(n);
-
-    scene = 0;
-    setTargets(targets[0]);
-    disperse();
-    t0 = performance.now();
-    running = true;
-  }
-
-  function drawHeartTextInside(){
-    ctx.save();
-    ctx.textAlign='center';
-    ctx.textBaseline='middle';
-    ctx.shadowColor='rgba(255,79,216,.35)';
-    ctx.shadowBlur=18;
-
-    const inside = isMobile ? Math.floor(Math.min(W,H) * 0.050) : Math.floor(Math.min(W,H) * 0.060);
-    ctx.fillStyle = 'rgba(255,143,233,.98)';
-    ctx.font = `900 ${inside}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
-    ctx.fillText('I Love You', W/2, H*0.48);
-
-    ctx.shadowBlur=10;
-    ctx.fillStyle = 'rgba(233,240,255,.95)';
-    ctx.font = `800 ${Math.floor(inside*0.92)}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
-    ctx.fillText(currentName, W/2, H*0.54);
-    ctx.restore();
-  }
-
-  function loop(now){
-    if(!running) return;
-
-    drawMatrix();
-    const elapsed = (now - t0) / 1000;
-
-    if(elapsed < 2.5){
-      if(scene !== 0){ scene = 0; setTargets(targets[0]); disperse(); }
-      stepParticles(1.0);
-      drawParticles(0.98);
-
-    } else if(elapsed < 7.5){
-      if(scene !== 1){ scene = 1; setTargets(targets[1]); disperse(); }
-      stepParticles(1.0);
-      drawParticles(0.98);
-
-    } else if(elapsed < 12.5){
-      if(scene !== 2){ scene = 2; setTargets(targets[2]); disperse(); }
-      stepParticles(1.0);
-      drawParticles(0.99);
-
-      // overlay del borde rosa tipo tiktok
-      drawHeartOverlayMiniHearts(heartPointsForOverlay);
-      drawHeartTextInside();
-
-    } else {
-      stepParticles(0.55);
-      const pulse = 0.90 + 0.08*Math.sin(elapsed*2.2);
-      drawParticles(pulse);
-
-      drawHeartOverlayMiniHearts(heartPointsForOverlay);
-      drawHeartTextInside();
-    }
-
-    requestAnimationFrame(loop);
-  }
-
-  // ====== UI ======
-  document.getElementById('go').addEventListener('click', restart);
-  addEventListener('pointerdown', (e)=>{
-    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
-    if(tag === 'input' || tag === 'button') return;
-    restart();
-  }, {passive:true});
-
-  // init
-  resize();
-  restart();
   requestAnimationFrame(loop);
-})();
+}
+
+restart();
+requestAnimationFrame(loop);
 </script>
+
 </body>
 </html>
