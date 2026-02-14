@@ -71,38 +71,55 @@
       background:#0b0c10;
     }
 
-    /* ✅ Imagen ajustada para verse mejor */
+    /* ✅ Imagen full bonita */
     .finalImg{
       position:absolute; inset:0;
       width:100%; height:100%;
-      object-fit:contain;              /* para que se vea completa */
-      object-position:center center;   /* centrada */
-      background:#07080d;              /* relleno elegante si sobran bordes */
+      object-fit:cover;                 /* llena la tarjeta */
+      object-position:center 20%;       /* sube un poco el encuadre */
+      background:#07080d;
       filter:none !important;
       transform:none !important;
     }
 
-    /* ✅ sombreado suave encima */
+    /* sombra general suave */
     .finalShade{
       position:absolute; inset:0;
-      background:radial-gradient(80% 70% at 50% 45%, rgba(0,0,0,.05), rgba(0,0,0,.60));
+      background:linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.55));
       pointer-events:none;
     }
 
-    /* ✅ TEXTO BLANCO (sin recuadro) */
+    /* ✅ Sombrilla solo para la frase (arriba izq) */
+    .topTextShade{
+      position:absolute;
+      left:0; top:0;
+      width:100%;
+      height:140px;
+      background:linear-gradient(180deg, rgba(0,0,0,.72), rgba(0,0,0,0));
+      pointer-events:none;
+    }
+
+    /* ✅ Frase “bonita” */
     .quote{
       position:absolute;
-      top:18px;
-      left:18px;
-      right:18px;
-      max-width:620px;
-      color:rgba(255,255,255,.92);
+      top:16px;
+      left:16px;
+      max-width:min(560px, 84%);
+      color:rgba(255,255,255,.95);
       font-weight:900;
       line-height:1.25;
       font-size:clamp(14px, 1.6vw, 18px);
-      text-shadow:
-        0 3px 14px rgba(0,0,0,.75),
-        0 1px 2px rgba(0,0,0,.85);
+
+      /* capsulita elegante */
+      padding:12px 14px;
+      border-radius:14px;
+      background:rgba(0,0,0,.28);
+      border:1px solid rgba(255,255,255,.10);
+      backdrop-filter: blur(8px);
+
+      text-shadow:0 3px 16px rgba(0,0,0,.85);
+      box-shadow:0 14px 30px rgba(0,0,0,.22);
+
       opacity:0;
       transform:translateY(-10px);
       transition:opacity 900ms ease, transform 900ms ease;
@@ -134,19 +151,18 @@
   <div class="ui">
     <div class="pill">
       <span>Para:</span>
-      <input id="name" value="Mi Amor" maxlength="24" />
+      <input id="name" value="Misita" maxlength="24" />
       <button id="go">▶</button>
     </div>
     <div class="hint">Toca/clic para <b>reiniciar</b><br/>y ver la animación otra vez</div>
   </div>
 
-  <!-- FINAL -->
   <div class="finalOverlay" id="finalOverlay">
     <div class="finalCard">
       <img class="finalImg" id="finalImg" alt="Imagen final" />
       <div class="finalShade"></div>
+      <div class="topTextShade"></div>
 
-      <!-- ✅ Solo el texto (sin Nota 1, sin recuadro) -->
       <div class="quote" id="quote1">
         “Y jamás olvides que el brillo tuyo es tan intenso como el de mil soles”
       </div>
@@ -157,7 +173,7 @@
 
 <script>
 (() => {
-  const FINAL_IMAGE_SRC = "final.png"; // <-- nombre de tu imagen en el repo
+  const FINAL_IMAGE_SRC = "final.png"; // <- tu imagen en el repo
 
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d', { alpha: true });
@@ -165,11 +181,6 @@
   const finalOverlay = document.getElementById('finalOverlay');
   const finalImg = document.getElementById('finalImg');
   finalImg.src = FINAL_IMAGE_SRC;
-
-  // Si la imagen no carga:
-  finalImg.addEventListener('error', () => {
-    console.warn("No se pudo cargar la imagen final. Revisa el nombre/ruta:", FINAL_IMAGE_SRC);
-  });
 
   const CFG = {
     matrixFont: 16,
@@ -180,13 +191,11 @@
 
     particleColor: 'rgba(255,255,255,0.95)',
     particleRadius: 1.2,
-    particleGlow: 'rgba(255,255,255,.20)',
     settleSpeed: 0.095,
     disperseForce: 3.6,
 
     d1: 2.2, d2: 2.2, d3: 2.2,
     dy: 2.0, da: 2.0, dm: 2.0, ds: 2.6,
-
     heartHold: 3.6,
     buildTime: 1.8
   };
@@ -256,7 +265,6 @@
 
     const img = ox.getImageData(0,0,W,H).data;
     const pts = [];
-
     const base = Math.max(2, Math.round(Math.min(W,H)/240));
     const step = Math.max(2, Math.round(base / density));
 
@@ -280,7 +288,6 @@
     ox.restore();
   }
 
-  // ===== HEART OUTLINE MADE OF MINI HEARTS =====
   function stampHeart(ox, x, y, s, rot=0){
     ox.save();
     ox.translate(x,y);
@@ -298,7 +305,6 @@
   function drawHeartOfHearts(cx, cy, scale){
     ox.save();
     ox.translate(cx, cy);
-
     const isMobile = W < 700;
     const count = isMobile ? 220 : 320;
     const s = isMobile ? 10 : 9;
@@ -321,7 +327,6 @@
       stampHeart(ox, px, py, s, ang);
       if(i%3===0) stampHeart(ox, px*0.985, py*0.985, s, ang);
     }
-
     ox.restore();
   }
 
@@ -337,14 +342,12 @@
       ty: points[i].y,
     }));
   }
-
   function disperse(){
     for(const p of particles){
       p.vx += (Math.random()-0.5)*CFG.disperseForce;
       p.vy += (Math.random()-0.5)*CFG.disperseForce;
     }
   }
-
   function stepParticles(k){
     const s = CFG.settleSpeed * k;
     for(const p of particles){
@@ -356,7 +359,6 @@
       p.y += p.vy;
     }
   }
-
   function drawParticles(alpha=1){
     ctx.save();
     ctx.globalAlpha = alpha;
