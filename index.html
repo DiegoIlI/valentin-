@@ -39,7 +39,7 @@
   <div class="ui">
     <div class="pill">
       <span>Para:</span>
-      <input id="name" value="Misita" maxlength="24" />
+      <input id="name" value="Mi Amor" maxlength="24" />
       <button id="go">▶</button>
     </div>
     <div class="hint">Toca/clic para <b>reiniciar</b><br/>y ver la animación otra vez</div>
@@ -59,22 +59,18 @@
     glowColor: 'rgba(255,79,216,0.55)',
 
     particleColor: 'rgba(255,255,255,0.95)',
-    particleRadius: 1.15,       // más fino para que texto se lea mejor
+    particleRadius: 1.2,
+    particleGlow: 'rgba(255,255,255,.20)',
     settleSpeed: 0.095,
-    disperseForce: 3.8,         // menos explosión = forma más suave
+    disperseForce: 3.6,
 
-    // Duraciones (seg) — MÁS TIEMPO para que "cargue/arme" bonito
-    d1: 2.2,   // 1
-    d2: 2.2,   // 2
-    d3: 2.2,   // 3
-    dy: 2.0,   // you
-    da: 2.0,   // are
-    dm: 2.0,   // my
-    ds: 2.6,   // sunshine
-    dHeart: 9999,
+    // Duraciones (seg) — más tiempo
+    d1: 2.2, d2: 2.2, d3: 2.2,
+    dy: 2.0, da: 2.0, dm: 2.0, ds: 2.6,
+    dHold: 9999,
 
-    // Tiempo de armado dentro de cada escena (se nota el “cargando”)
-    buildTime: 1.25
+    // “tiempo de armado” por escena
+    buildTime: 1.6
   };
 
   // ===== RESIZE =====
@@ -123,13 +119,21 @@
     ctx.shadowBlur = 0;
   }
 
-  // ===== OFFSCREEN → POINTS =====
+  // ===== OFFSCREEN (IMPORTANTE: SIN SOMBRAS) =====
   const off = document.createElement('canvas');
   const ox = off.getContext('2d');
 
-  function makeTarget(drawFn, density=1.0){
+  function resetOffscreen(){
     off.width = W; off.height = H;
+    ox.setTransform(1,0,0,1,0,0);
     ox.clearRect(0,0,W,H);
+    ox.shadowBlur = 0;        // CLAVE
+    ox.shadowColor = 'transparent';
+    ox.globalAlpha = 1;
+  }
+
+  function makeTarget(drawFn, density=1.0){
+    resetOffscreen();
     drawFn(ox);
 
     const img = ox.getImageData(0,0,W,H).data;
@@ -141,7 +145,7 @@
     for(let y=0;y<H;y+=step){
       for(let x=0;x<W;x+=step){
         const a = img[(y*W + x)*4 + 3];
-        if(a > 10) pts.push({x,y});
+        if(a > 40) pts.push({x,y});  // umbral más alto para ignorar “restos”
       }
     }
     return pts;
@@ -152,70 +156,52 @@
     ox.textAlign='center';
     ox.textBaseline='middle';
     ox.fillStyle=color;
+    ox.shadowBlur = 0;          // CLAVE: nada de shadow en target
     ox.font=`${weight} ${size}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
-    ox.shadowColor='rgba(255,79,216,.35)';
-    ox.shadowBlur=18;
     ox.fillText(text, W/2, y);
     ox.restore();
   }
 
-  // ===== Mini heart path (para que se vea igual en todos lados) =====
+  // ===== MINI HEART PATH (igual en todos lados) =====
   function stampHeart(ox, x, y, s, rot=0){
     ox.save();
     ox.translate(x,y);
     ox.rotate(rot);
     ox.scale(s,s);
-
-    // corazón simple con bezier (relleno)
     ox.beginPath();
     ox.moveTo(0, 0.35);
     ox.bezierCurveTo(-0.65, -0.20, -0.65, -0.85, 0, -0.55);
     ox.bezierCurveTo( 0.65, -0.85,  0.65, -0.20, 0,  0.35);
     ox.closePath();
     ox.fill();
-
     ox.restore();
   }
 
-  // Corazón estilo “video”: borde de mini corazones
   function drawHeartOfHearts(cx, cy, scale){
     ox.save();
     ox.translate(cx, cy);
 
     const isMobile = W < 700;
-    const count = isMobile ? 220 : 300;      // más puntos = más parecido al tiktok
-    const size = isMobile ? 10 : 9;          // tamaño mini-corazón
-    const s = size;                           // en px (porque stampHeart escala directo)
+    const count = isMobile ? 220 : 320;
+    const s = isMobile ? 10 : 9;
 
     ox.fillStyle = 'rgba(255,79,216,.95)';
-    ox.shadowColor = 'rgba(255,79,216,.60)';
-    ox.shadowBlur = 18;
+    ox.shadowBlur = 0; // CLAVE: sin sombra en target
 
     for(let i=0;i<count;i++){
-      const t = (i/(count-1)) * Math.PI*2;
-
-      // paramétrica clásica
+      const t = (i/(count-1))*Math.PI*2;
       const x = 16*Math.pow(Math.sin(t),3);
       const y = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
-
       const px = x*scale;
       const py = y*scale;
 
-      // orientación por derivada numérica
       const t2 = t + 0.02;
       const x2 = 16*Math.pow(Math.sin(t2),3);
       const y2 = -(13*Math.cos(t2) - 5*Math.cos(2*t2) - 2*Math.cos(3*t2) - Math.cos(4*t2));
       const ang = Math.atan2((y2-y),(x2-x)) + Math.PI/2;
 
-      // borde principal
       stampHeart(ox, px, py, s, ang);
-
-      // segundo borde interno para grosor (tipo video)
-      if(i % 3 === 0){
-        ox.globalAlpha = 0.85;
-        stampHeart(ox, px*0.985, py*0.985, s, ang);
-        ox.globalAlpha = 1;
-      }
+      if(i%3===0) stampHeart(ox, px*0.985, py*0.985, s, ang);
     }
 
     ox.restore();
@@ -234,6 +220,13 @@
     }));
   }
 
+  function disperse(){
+    for(const p of particles){
+      p.vx += (Math.random()-0.5)*CFG.disperseForce;
+      p.vy += (Math.random()-0.5)*CFG.disperseForce;
+    }
+  }
+
   function stepParticles(k){
     const s = CFG.settleSpeed * k;
     for(const p of particles){
@@ -246,18 +239,12 @@
     }
   }
 
-  function disperse(){
-    for(const p of particles){
-      p.vx += (Math.random()-0.5)*CFG.disperseForce;
-      p.vy += (Math.random()-0.5)*CFG.disperseForce;
-    }
-  }
-
+  // Glow bonito SOLO aquí (pantalla), NO en el target
   function drawParticles(alpha=1){
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.fillStyle = CFG.particleColor;
-    ctx.shadowColor = 'rgba(255,255,255,.22)';
+    ctx.shadowColor = CFG.particleGlow;
     ctx.shadowBlur = 10;
 
     const r = CFG.particleRadius;
@@ -270,14 +257,12 @@
   }
 
   // ===== SCENES =====
-  let scenes = [];
+  let scenes=[];
   function buildScenes(name){
     const isMobile = W < 700;
-
     const bigNum = isMobile ? Math.min(W,H)*0.36 : Math.min(W,H)*0.44;
     const wordSize = isMobile ? Math.floor(Math.min(W,H)*0.15) : Math.floor(Math.min(W,H)*0.19);
 
-    // densidad alta en números/words = más definido
     const one   = makeTarget(()=>drawCenteredText('1', Math.floor(bigNum), H*0.50), 1.55);
     const two   = makeTarget(()=>drawCenteredText('2', Math.floor(bigNum), H*0.50), 1.55);
     const three = makeTarget(()=>drawCenteredText('3', Math.floor(bigNum), H*0.50), 1.55);
@@ -291,8 +276,7 @@
       const scale = isMobile ? Math.min(W,H)*0.014 : Math.min(W,H)*0.0175;
       drawHeartOfHearts(W/2, H*0.50, scale);
 
-      // texto interno más grande y con mejor contraste
-      const inside = isMobile ? Math.floor(Math.min(W,H)*0.050) : Math.floor(Math.min(W,H)*0.060);
+      const inside = isMobile ? Math.floor(Math.min(W,H)*0.055) : Math.floor(Math.min(W,H)*0.065);
       drawCenteredText('I Love You', inside, H*0.48, 'rgba(255,143,233,.98)', 900);
       drawCenteredText(name, Math.floor(inside*0.92), H*0.54, 'rgba(233,240,255,.95)', 800);
     }, 1.05);
@@ -302,7 +286,6 @@
 
   // ===== TIMELINE =====
   let t0=0, idx=-1, idxStart=0;
-
   function idxAtTime(sec){
     const cuts = [
       CFG.d1,
@@ -322,8 +305,7 @@
     if(sec < cuts[6]) return 6;
     return 7;
   }
-
-  function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+  const easeOutCubic = t => 1 - Math.pow(1-t,3);
 
   function restart(){
     const name = (document.getElementById('name').value || 'Mi Amor').trim().slice(0,24);
@@ -346,13 +328,11 @@
       disperse();
     }
 
-    // “carga/armado”: al iniciar escena, se arma gradual
     const prog = Math.min(1, Math.max(0, (elapsed - idxStart) / CFG.buildTime));
-    const k = 0.25 + 0.95 * easeOutCubic(prog);  // empieza lento y se arma bonito
+    const k = 0.18 + 0.98 * easeOutCubic(prog);
     stepParticles(k);
 
-    // brillo/alpha: sube durante el armado
-    const alpha = 0.75 + 0.25 * easeOutCubic(prog);
+    const alpha = 0.70 + 0.30 * easeOutCubic(prog);
 
     if(idx === 7){
       const pulse = 0.90 + 0.08*Math.sin(elapsed*2.0);
