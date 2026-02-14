@@ -8,12 +8,10 @@
     :root{
       --bg:#05060a;
       --pink:#ff4fd8;
-      --pink2:#ff8fe9;
       --text:#e9f0ff;
     }
     html,body{height:100%; margin:0; background:var(--bg); overflow:hidden; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;}
-    #wrap{position:fixed; inset:0; display:block;}
-    canvas{position:absolute; inset:0; width:100%; height:100%;}
+    canvas{position:fixed; inset:0; width:100%; height:100%;}
     .ui{
       position:fixed; left:0; right:0; top:0;
       display:flex; justify-content:space-between; align-items:center;
@@ -65,14 +63,12 @@
   </style>
 </head>
 <body>
-  <div id="wrap">
-    <canvas id="c"></canvas>
-  </div>
+  <canvas id="c"></canvas>
 
   <div class="ui">
     <div class="pill">
       <span>Para:</span>
-      <input id="name" value="Misita" maxlength="24" />
+      <input id="name" value="Mi Amor" maxlength="24" />
       <button id="go">▶</button>
     </div>
     <div class="hint">
@@ -85,31 +81,27 @@
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d', { alpha: true });
 
-  // ========= CONFIG =========
+  // ===== Config =====
   const CFG = {
-    matrixSpeed: 1.25,
     matrixFont: 16,
+    matrixSpeed: 1.2,
     matrixFade: 0.085,
     matrixColor: 'rgba(255,79,216,0.85)',
     glowColor: 'rgba(255,79,216,0.55)',
 
     particleColor: 'rgba(255,255,255,0.95)',
-    particleCountDesktop: 2000,
-    particleCountMobile: 1700,
+    settleSpeed: 0.085,
+    disperseForce: 4.5, // menos “explosión” para que se armen más rápido
 
-    settleSpeed: 0.078,     // qué tan rápido se “arma”
-    heartStampColor: 'rgba(255,79,216,.95)',
-    heartGlow: 'rgba(255,79,216,.60)',
-
-    // Duración de escenas (segundos)
-    d1: 1.6,   // "1"
-    d2: 1.6,   // "2"
-    d3: 1.6,   // "3"
-    dText: 5.4,// you are my sunshine
-    dHeart: 9999 // mantener corazón
+    // Duraciones (segundos) — más tiempo para que sí se formen bien
+    d1: 1.8,   // 1
+    d2: 1.8,   // 2
+    d3: 1.8,   // 3
+    dText: 6.0,// you are my sunshine
+    dHold: 9999 // corazón al final
   };
 
-  // ========= RESIZE =========
+  // ===== Resize =====
   let W=0, H=0, DPR=1;
   function resize(){
     DPR = Math.min(2, window.devicePixelRatio || 1);
@@ -124,15 +116,14 @@
   }
   addEventListener('resize', resize, {passive:true});
 
-  // ========= MATRIX =========
+  // ===== Matrix =====
   const chars = ('01アイウエオカキクケコサシスセソタチツテトナニヌネノ' +
                  'ハヒフヘホマミムメモヤユヨラリルレロワヲン' +
                  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' +
                  '0123456789@#$%&*+-=?<>').split('');
   let columns=0, drops=[];
   function matrixInit(){
-    const fs = CFG.matrixFont;
-    columns = Math.ceil(W / fs);
+    columns = Math.ceil(W / CFG.matrixFont);
     drops = new Array(columns).fill(0).map(()=>Math.random()*H);
   }
   function drawMatrix(){
@@ -144,7 +135,6 @@
       const x = i*CFG.matrixFont;
       const y = drops[i];
       const ch = chars[(Math.random()*chars.length)|0];
-
       ctx.fillStyle = CFG.matrixColor;
       ctx.shadowColor = CFG.glowColor;
       ctx.shadowBlur = 12;
@@ -156,33 +146,32 @@
     ctx.shadowBlur = 0;
   }
 
-  // ========= TARGETS (OFFSCREEN) =========
+  // ===== Offscreen → puntos =====
   const off = document.createElement('canvas');
   const ox = off.getContext('2d');
 
-  function makeTarget(drawFn, density=1){
-    off.width = Math.floor(W);
-    off.height = Math.floor(H);
+  function makeTarget(drawFn, density=1.0){
+    off.width = W; off.height = H;
     ox.clearRect(0,0,W,H);
     drawFn(ox);
 
     const img = ox.getImageData(0,0,W,H).data;
     const pts = [];
 
-    // step adaptativo (más denso cuando density > 1)
-    const baseStep = Math.max(2, Math.round(Math.min(W,H)/280));
-    const step = Math.max(2, Math.round(baseStep / density));
+    // step: más pequeño = más puntos
+    const base = Math.max(2, Math.round(Math.min(W,H)/240));
+    const step = Math.max(2, Math.round(base / density));
 
     for(let y=0;y<H;y+=step){
       for(let x=0;x<W;x+=step){
         const a = img[(y*W + x)*4 + 3];
-        if(a > 10) pts.push({x, y});
+        if(a > 10) pts.push({x,y});
       }
     }
     return pts;
   }
 
-  function drawCenteredText(ox, text, size, y, color='white', weight=900){
+  function drawCenteredText(text, size, y, color='white', weight=900){
     ox.save();
     ox.textAlign='center';
     ox.textBaseline='middle';
@@ -194,34 +183,29 @@
     ox.restore();
   }
 
-  // Corazón “del video”: borde hecho de mini-corazoncitos
-  function drawHeartOfHearts(ox, cx, cy, s){
+  // corazón con corazoncitos en el borde (tipo video)
+  function drawHeartOfHearts(cx, cy, scale){
     ox.save();
     ox.translate(cx, cy);
 
-    // parámetros
-    const count = 220; // cantidad de “stamps” en el borde
-    const stampSize = Math.max(10, Math.floor(Math.min(W,H) * (W < 700 ? 0.020 : 0.017)));
-    ox.font = `800 ${stampSize}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+    const isMobile = W < 700;
+    const count = isMobile ? 180 : 240;
+    const stampSize = Math.max(10, Math.floor(Math.min(W,H) * (isMobile ? 0.020 : 0.017)));
+
+    ox.font = `900 ${stampSize}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
     ox.textAlign = 'center';
     ox.textBaseline = 'middle';
-
-    ox.fillStyle = CFG.heartStampColor;
-    ox.shadowColor = CFG.heartGlow;
+    ox.fillStyle = 'rgba(255,79,216,.95)';
+    ox.shadowColor = 'rgba(255,79,216,.60)';
     ox.shadowBlur = 18;
 
-    // Paramétrica de corazón (x,y) alrededor del borde
     for(let i=0;i<count;i++){
       const t = (i/(count-1)) * Math.PI * 2;
-
       const x = 16*Math.pow(Math.sin(t),3);
       const y = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
+      const px = x * scale;
+      const py = y * scale;
 
-      // escalar + pequeño “grosor” para que se vea lleno
-      const px = x * s;
-      const py = y * s;
-
-      // rotación aproximada usando derivada numérica para que los corazones sigan el borde
       const t2 = t + 0.02;
       const x2 = 16*Math.pow(Math.sin(t2),3);
       const y2 = -(13*Math.cos(t2) - 5*Math.cos(2*t2) - 2*Math.cos(3*t2) - Math.cos(4*t2));
@@ -233,7 +217,6 @@
       ox.fillText('❤', 0, 0);
       ox.restore();
 
-      // un segundo stamp ligeramente adentro para grosor tipo “corazoncitos” del video
       if(i % 3 === 0){
         ox.save();
         ox.translate(px*0.985, py*0.985);
@@ -248,7 +231,7 @@
     ox.restore();
   }
 
-  // ========= PARTICLES =========
+  // ===== Partículas =====
   let particles=[];
   function initParticles(n){
     particles = new Array(n).fill(0).map(()=>({
@@ -262,10 +245,16 @@
   }
 
   function setTargets(points){
-    for(let i=0;i<particles.length;i++){
-      const p = particles[i];
-      const t = points[i % points.length];
-      p.tx = t.x; p.ty = t.y;
+    // IMPORTANTE: solo asigna hasta donde hay puntos (evita amontonamiento)
+    const n = Math.min(particles.length, points.length);
+    for(let i=0;i<n;i++){
+      particles[i].tx = points[i].x;
+      particles[i].ty = points[i].y;
+    }
+    // si sobran partículas (raro), las mandamos lejos para que no estorben
+    for(let i=n;i<particles.length;i++){
+      particles[i].tx = -9999;
+      particles[i].ty = -9999;
     }
   }
 
@@ -283,8 +272,8 @@
 
   function disperse(){
     for(const p of particles){
-      p.vx += (Math.random()-0.5)*8;
-      p.vy += (Math.random()-0.5)*8;
+      p.vx += (Math.random()-0.5)*CFG.disperseForce;
+      p.vy += (Math.random()-0.5)*CFG.disperseForce;
     }
   }
 
@@ -294,8 +283,8 @@
     ctx.fillStyle = CFG.particleColor;
     ctx.shadowColor = 'rgba(255,255,255,.25)';
     ctx.shadowBlur = 10;
-
     for(const p of particles){
+      if(p.tx < -1000) continue;
       ctx.beginPath();
       ctx.arc(p.x, p.y, 1.35, 0, Math.PI*2);
       ctx.fill();
@@ -303,86 +292,70 @@
     ctx.restore();
   }
 
-  // ========= ESCENAS =========
+  // ===== Escenas =====
   let targets = [];
   function buildScenes(name){
     const isMobile = W < 700;
 
-    // tamaño de números 1/2/3
-    const bigNum = isMobile ? Math.min(W,H)*0.34 : Math.min(W,H)*0.42;
+    const bigNum = isMobile ? Math.min(W,H)*0.36 : Math.min(W,H)*0.44;
+    const lineSize = isMobile ? Math.floor(Math.min(W,H)*0.115) : Math.floor(Math.min(W,H)*0.155);
 
-    // texto "you are my sunshine" en 4 líneas (mejor en móvil)
-    const lineSize = isMobile ? Math.floor(Math.min(W,H)*0.11) : Math.floor(Math.min(W,H)*0.15);
+    // AUMENTAMOS densidad de 1/2/3 para que NO se haga “bloque”
+    const s1 = makeTarget(()=> drawCenteredText('1', Math.floor(bigNum), H*0.50), 1.35);
+    const s2 = makeTarget(()=> drawCenteredText('2', Math.floor(bigNum), H*0.50), 1.35);
+    const s3 = makeTarget(()=> drawCenteredText('3', Math.floor(bigNum), H*0.50), 1.35);
 
-    const s1 = makeTarget((ox)=>{
-      drawCenteredText(ox, '1', Math.floor(bigNum), H*0.50, 'white', 900);
-    });
+    const sText = makeTarget(()=>{
+      drawCenteredText('you',      lineSize, H*0.30);
+      drawCenteredText('are',      lineSize, H*0.44);
+      drawCenteredText('my',       lineSize, H*0.58);
+      drawCenteredText('sunshine', lineSize, H*0.72);
+    }, 1.20);
 
-    const s2 = makeTarget((ox)=>{
-      drawCenteredText(ox, '2', Math.floor(bigNum), H*0.50, 'white', 900);
-    });
-
-    const s3 = makeTarget((ox)=>{
-      drawCenteredText(ox, '3', Math.floor(bigNum), H*0.50, 'white', 900);
-    });
-
-    const sText = makeTarget((ox)=>{
-      drawCenteredText(ox, 'you',      lineSize, H*0.30, 'white', 900);
-      drawCenteredText(ox, 'are',      lineSize, H*0.44, 'white', 900);
-      drawCenteredText(ox, 'my',       lineSize, H*0.58, 'white', 900);
-      drawCenteredText(ox, 'sunshine', lineSize, H*0.72, 'white', 900);
-    });
-
-    // Corazón final (más densidad para que se vea “hecho de corazoncitos”)
-    const sHeart = makeTarget((ox)=>{
-      const scale = (isMobile ? Math.min(W,H)*0.014 : Math.min(W,H)*0.017); // escala del corazón
-      drawHeartOfHearts(ox, W/2, H*0.50, scale);
+    const sHeart = makeTarget(()=>{
+      const scale = isMobile ? Math.min(W,H)*0.014 : Math.min(W,H)*0.017;
+      drawHeartOfHearts(W/2, H*0.50, scale);
 
       const inside = isMobile ? Math.floor(Math.min(W,H)*0.045) : Math.floor(Math.min(W,H)*0.055);
-      drawCenteredText(ox, 'I Love You', inside, H*0.48, 'rgba(255,143,233,.98)', 800);
-      drawCenteredText(ox, name, Math.floor(inside*0.92), H*0.54, 'rgba(233,240,255,.95)', 700);
-    }, 2.1);
+      drawCenteredText('I Love You', inside, H*0.48, 'rgba(255,143,233,.98)', 800);
+      drawCenteredText(name, Math.floor(inside*0.92), H*0.54, 'rgba(233,240,255,.95)', 700);
+    }, 1.0);
 
     targets = [s1, s2, s3, sText, sHeart];
+
+    // Partículas se ajustan al target MÁS PEQUEÑO (clave para que no se amontonen)
+    const minPts = Math.min(...targets.map(t => t.length));
+    const desired = isMobile ? 1100 : 1500;
+    const n = Math.max(650, Math.min(desired, minPts));
+    initParticles(n);
   }
 
-  // ========= TIMELINE =========
-  let t0=0, running=true, scene=-1;
+  // ===== Timeline =====
+  let t0=0, scene=-1;
 
   function sceneAtTime(sec){
-    const cuts = [
-      CFG.d1,
-      CFG.d1 + CFG.d2,
-      CFG.d1 + CFG.d2 + CFG.d3,
-      CFG.d1 + CFG.d2 + CFG.d3 + CFG.dText,
-      CFG.d1 + CFG.d2 + CFG.d3 + CFG.dText + CFG.dHeart
-    ];
-    if(sec < cuts[0]) return 0; // 1
-    if(sec < cuts[1]) return 1; // 2
-    if(sec < cuts[2]) return 2; // 3
-    if(sec < cuts[3]) return 3; // you are my sunshine
-    return 4; // heart
+    const a = CFG.d1;
+    const b = a + CFG.d2;
+    const c = b + CFG.d3;
+    const d = c + CFG.dText;
+    if(sec < a) return 0;
+    if(sec < b) return 1;
+    if(sec < c) return 2;
+    if(sec < d) return 3;
+    return 4;
   }
 
   function restart(){
     const name = (document.getElementById('name').value || 'Mi Amor').trim().slice(0,24);
     buildScenes(name);
-
-    const isMobile = W < 700;
-    const n = isMobile ? CFG.particleCountMobile : CFG.particleCountDesktop;
-    initParticles(n);
-
     scene = -1;
     t0 = performance.now();
-    running = true;
   }
 
   function loop(now){
-    if(!running) return;
-
     drawMatrix();
-    const elapsed = (now - t0) / 1000;
 
+    const elapsed = (now - t0)/1000;
     const s = sceneAtTime(elapsed);
     if(s !== scene){
       scene = s;
@@ -390,8 +363,7 @@
       disperse();
     }
 
-    // movimiento y render
-    const k = (scene === 4) ? 0.72 : 1.0; // corazón se asienta más suave
+    const k = (scene === 4) ? 0.72 : 1.0;
     stepParticles(k);
 
     if(scene === 4){
@@ -404,7 +376,7 @@
     requestAnimationFrame(loop);
   }
 
-  // ========= UI =========
+  // ===== UI =====
   document.getElementById('go').addEventListener('click', restart);
   addEventListener('pointerdown', (e)=>{
     const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
