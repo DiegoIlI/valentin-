@@ -21,7 +21,7 @@
       pointer-events:none;
       color:rgba(233,240,255,.9);
       text-shadow:0 2px 10px rgba(0,0,0,.6);
-      font-weight:600;
+      font-weight:700;
       z-index:5;
     }
     .pill{
@@ -39,7 +39,7 @@
       border:none; outline:none;
       background:transparent;
       color: var(--text);
-      font-weight:700;
+      font-weight:800;
     }
     .pill button{
       border:none; outline:none; cursor:pointer;
@@ -48,17 +48,16 @@
       border:1px solid rgba(255,79,216,.35);
       padding:8px 10px;
       border-radius:999px;
-      font-weight:800;
+      font-weight:900;
     }
     .hint{
       pointer-events:none;
       opacity:.75;
-      font-weight:600;
       font-size:12px;
       line-height:1.2;
       text-align:right;
+      font-weight:700;
     }
-    .hint b{opacity:1}
     @media (max-width:520px){
       .hint{display:none;}
       .pill input{width: 120px;}
@@ -86,24 +85,31 @@
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d', { alpha: true });
 
-  // ====== Config ======
+  // ========= CONFIG =========
   const CFG = {
     matrixSpeed: 1.25,
     matrixFont: 16,
-    matrixFade: 0.08,
+    matrixFade: 0.085,
     matrixColor: 'rgba(255,79,216,0.85)',
     glowColor: 'rgba(255,79,216,0.55)',
-    particleColor: 'rgba(255,255,255,0.95)',
-    particleCountDesktop: 1700,
-    particleCountMobile: 1300,
-    settleSpeed: 0.075,
 
-    // corazón mini-hearts
-    heartPink: 'rgba(255,79,216,.95)',
-    heartGlow: 'rgba(255,79,216,.55)',
+    particleColor: 'rgba(255,255,255,0.95)',
+    particleCountDesktop: 1900,
+    particleCountMobile: 1400,
+
+    settleSpeed: 0.078,     // qué tan rápido se “arma”
+    heartStampColor: 'rgba(255,79,216,.95)',
+    heartGlow: 'rgba(255,79,216,.60)',
+
+    // Duración de escenas (segundos)
+    d1: 1.6,   // "1"
+    d2: 1.6,   // "2"
+    d3: 1.6,   // "3"
+    dText: 5.4,// you are my sunshine
+    dHeart: 9999 // mantener corazón
   };
 
-  // ====== Resize ======
+  // ========= RESIZE =========
   let W=0, H=0, DPR=1;
   function resize(){
     DPR = Math.min(2, window.devicePixelRatio || 1);
@@ -118,7 +124,7 @@
   }
   addEventListener('resize', resize, {passive:true});
 
-  // ====== Matrix rain ======
+  // ========= MATRIX =========
   const chars = ('01アイウエオカキクケコサシスセソタチツテトナニヌネノ' +
                  'ハヒフヘホマミムメモヤユヨラリルレロワヲン' +
                  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' +
@@ -129,7 +135,6 @@
     columns = Math.ceil(W / fs);
     drops = new Array(columns).fill(0).map(()=>Math.random()*H);
   }
-
   function drawMatrix(){
     ctx.fillStyle = `rgba(5,6,10,${CFG.matrixFade})`;
     ctx.fillRect(0,0,W,H);
@@ -151,11 +156,11 @@
     ctx.shadowBlur = 0;
   }
 
-  // ====== Target points (dibujar en canvas oculto y sacar puntos) ======
+  // ========= TARGETS (OFFSCREEN) =========
   const off = document.createElement('canvas');
   const ox = off.getContext('2d');
 
-  function makeTarget(drawFn){
+  function makeTarget(drawFn, density=1){
     off.width = Math.floor(W);
     off.height = Math.floor(H);
     ox.clearRect(0,0,W,H);
@@ -164,7 +169,10 @@
     const img = ox.getImageData(0,0,W,H).data;
     const pts = [];
 
-    const step = Math.max(3, Math.round(Math.min(W,H)/260));
+    // step adaptativo (más denso cuando density > 1)
+    const baseStep = Math.max(2, Math.round(Math.min(W,H)/280));
+    const step = Math.max(2, Math.round(baseStep / density));
+
     for(let y=0;y<H;y+=step){
       for(let x=0;x<W;x+=step){
         const a = img[(y*W + x)*4 + 3];
@@ -186,42 +194,61 @@
     ox.restore();
   }
 
-  // ====== Corazón hecho de mini-corazones (como TikTok) ======
-  function drawHeartWithMiniHearts(ox, cx, cy, scale, heartGlyphSizePx){
-    // corazón paramétrico (mismo shape), pero lo "pintamos" con muchos corazoncitos
-    const pts = [];
-    for(let t=0;t<=Math.PI*2+0.01;t+=0.035){
-      const x = 16*Math.pow(Math.sin(t),3);
-      const y = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
-      pts.push({x, y});
-    }
-
+  // Corazón “del video”: borde hecho de mini-corazoncitos
+  function drawHeartOfHearts(ox, cx, cy, s){
     ox.save();
     ox.translate(cx, cy);
-    ox.scale(scale, scale);
 
-    // mini hearts
+    // parámetros
+    const count = 220; // cantidad de “stamps” en el borde
+    const stampSize = Math.max(10, Math.floor(Math.min(W,H) * (W < 700 ? 0.020 : 0.017)));
+    ox.font = `800 ${stampSize}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
     ox.textAlign = 'center';
     ox.textBaseline = 'middle';
-    ox.fillStyle = CFG.heartPink;
+
+    ox.fillStyle = CFG.heartStampColor;
     ox.shadowColor = CFG.heartGlow;
     ox.shadowBlur = 18;
 
-    // Usamos ♥ para compatibilidad (emoji ❤️ a veces cambia color)
-    ox.font = `800 ${heartGlyphSizePx}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+    // Paramétrica de corazón (x,y) alrededor del borde
+    for(let i=0;i<count;i++){
+      const t = (i/(count-1)) * Math.PI * 2;
 
-    for(let i=0;i<pts.length;i++){
-      const p = pts[i];
-      // un poquito de random para que se vea orgánico
-      const jx = (Math.random()-0.5)*0.6;
-      const jy = (Math.random()-0.5)*0.6;
-      ox.fillText('♥', p.x + jx, p.y + jy);
+      const x = 16*Math.pow(Math.sin(t),3);
+      const y = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
+
+      // escalar + pequeño “grosor” para que se vea lleno
+      const px = x * s;
+      const py = y * s;
+
+      // rotación aproximada usando derivada numérica para que los corazones sigan el borde
+      const t2 = t + 0.02;
+      const x2 = 16*Math.pow(Math.sin(t2),3);
+      const y2 = -(13*Math.cos(t2) - 5*Math.cos(2*t2) - 2*Math.cos(3*t2) - Math.cos(4*t2));
+      const ang = Math.atan2((y2-y), (x2-x)) + Math.PI/2;
+
+      ox.save();
+      ox.translate(px, py);
+      ox.rotate(ang);
+      ox.fillText('❤', 0, 0);
+      ox.restore();
+
+      // un segundo stamp ligeramente adentro para grosor tipo “corazoncitos” del video
+      if(i % 3 === 0){
+        ox.save();
+        ox.translate(px*0.985, py*0.985);
+        ox.rotate(ang);
+        ox.globalAlpha = 0.85;
+        ox.fillText('❤', 0, 0);
+        ox.restore();
+        ox.globalAlpha = 1;
+      }
     }
 
     ox.restore();
   }
 
-  // ====== Particles ======
+  // ========= PARTICLES =========
   let particles=[];
   function initParticles(n){
     particles = new Array(n).fill(0).map(()=>({
@@ -276,57 +303,76 @@
     ctx.restore();
   }
 
-  // ====== Scenes (1 -> You are my love -> Heart) ======
+  // ========= ESCENAS =========
   let targets = [];
   function buildScenes(name){
     const isMobile = W < 700;
 
-    const big1 = isMobile ? Math.min(W,H) * 0.34 : Math.min(W,H) * 0.42;
-    const lineSize = isMobile ? Math.floor(Math.min(W,H) * 0.13) : Math.floor(Math.min(W,H) * 0.18);
+    // tamaño de números 1/2/3
+    const bigNum = isMobile ? Math.min(W,H)*0.34 : Math.min(W,H)*0.42;
+
+    // texto "you are my sunshine" en 4 líneas (mejor en móvil)
+    const lineSize = isMobile ? Math.floor(Math.min(W,H)*0.11) : Math.floor(Math.min(W,H)*0.15);
 
     const s1 = makeTarget((ox)=>{
-      drawCenteredText(ox, '1', Math.floor(big1), H*0.50, 'white', 900);
+      drawCenteredText(ox, '1', Math.floor(bigNum), H*0.50, 'white', 900);
     });
 
     const s2 = makeTarget((ox)=>{
-      drawCenteredText(ox, 'You',     lineSize, H*0.34, 'white', 900);
-      drawCenteredText(ox, 'are',     lineSize, H*0.50, 'white', 900);
-      drawCenteredText(ox, 'my love', lineSize, H*0.66, 'white', 900);
+      drawCenteredText(ox, '2', Math.floor(bigNum), H*0.50, 'white', 900);
     });
 
     const s3 = makeTarget((ox)=>{
-      // Corazón como el video (mini-corazones)
-      const scale = isMobile ? Math.min(W,H) * 0.0125 : Math.min(W,H) * 0.0155;
-
-      // tamaño de cada mini-corazón (en unidades del corazón)
-      // (ojo: como estamos dentro de ox.scale(scale), esto se siente más orgánico)
-      const glyph = isMobile ? 3.3 : 3.8;
-      drawHeartWithMiniHearts(ox, W/2, H*0.50, scale, glyph);
-
-      // Texto dentro
-      const inside = isMobile ? Math.floor(Math.min(W,H) * 0.048) : Math.floor(Math.min(W,H) * 0.058);
-      drawCenteredText(ox, 'I Love You', inside, H*0.48, 'rgba(255,143,233,.98)', 800);
-      drawCenteredText(ox, name, Math.floor(inside*0.92), H*0.54, 'rgba(233,240,255,.95)', 700);
+      drawCenteredText(ox, '3', Math.floor(bigNum), H*0.50, 'white', 900);
     });
 
-    targets = [s1, s2, s3];
+    const sText = makeTarget((ox)=>{
+      drawCenteredText(ox, 'you',      lineSize, H*0.30, 'white', 900);
+      drawCenteredText(ox, 'are',      lineSize, H*0.44, 'white', 900);
+      drawCenteredText(ox, 'my',       lineSize, H*0.58, 'white', 900);
+      drawCenteredText(ox, 'sunshine', lineSize, H*0.72, 'white', 900);
+    });
+
+    // Corazón final (más densidad para que se vea “hecho de corazoncitos”)
+    const sHeart = makeTarget((ox)=>{
+      const scale = (isMobile ? Math.min(W,H)*0.014 : Math.min(W,H)*0.017); // escala del corazón
+      drawHeartOfHearts(ox, W/2, H*0.50, scale);
+
+      const inside = isMobile ? Math.floor(Math.min(W,H)*0.045) : Math.floor(Math.min(W,H)*0.055);
+      drawCenteredText(ox, 'I Love You', inside, H*0.48, 'rgba(255,143,233,.98)', 800);
+      drawCenteredText(ox, name, Math.floor(inside*0.92), H*0.54, 'rgba(233,240,255,.95)', 700);
+    }, 1.35);
+
+    targets = [s1, s2, s3, sText, sHeart];
   }
 
-  // ====== Timeline ======
-  let t0=0, running=true, scene=0;
+  // ========= TIMELINE =========
+  let t0=0, running=true, scene=-1;
+
+  function sceneAtTime(sec){
+    const cuts = [
+      CFG.d1,
+      CFG.d1 + CFG.d2,
+      CFG.d1 + CFG.d2 + CFG.d3,
+      CFG.d1 + CFG.d2 + CFG.d3 + CFG.dText,
+      CFG.d1 + CFG.d2 + CFG.d3 + CFG.dText + CFG.dHeart
+    ];
+    if(sec < cuts[0]) return 0; // 1
+    if(sec < cuts[1]) return 1; // 2
+    if(sec < cuts[2]) return 2; // 3
+    if(sec < cuts[3]) return 3; // you are my sunshine
+    return 4; // heart
+  }
 
   function restart(){
     const name = (document.getElementById('name').value || 'Mi Amor').trim().slice(0,24);
-
     buildScenes(name);
 
     const isMobile = W < 700;
     const n = isMobile ? CFG.particleCountMobile : CFG.particleCountDesktop;
     initParticles(n);
 
-    scene = 0;
-    setTargets(targets[scene]);
-    disperse();
+    scene = -1;
     t0 = performance.now();
     running = true;
   }
@@ -337,32 +383,28 @@
     drawMatrix();
     const elapsed = (now - t0) / 1000;
 
-    // 0-2.5s: "1"
-    // 2.5-7.5s: "You are my love"
-    // 7.5-12.5s: heart
-    // 12.5+: hold
-    if(elapsed < 2.5){
-      if(scene !== 0){ scene = 0; setTargets(targets[0]); disperse(); }
-      stepParticles(1.0);
-      drawParticles(0.95);
-    } else if(elapsed < 7.5){
-      if(scene !== 1){ scene = 1; setTargets(targets[1]); disperse(); }
-      stepParticles(1.0);
-      drawParticles(0.95);
-    } else if(elapsed < 12.5){
-      if(scene !== 2){ scene = 2; setTargets(targets[2]); disperse(); }
-      stepParticles(1.0);
-      drawParticles(0.98);
-    } else {
-      stepParticles(0.55);
-      const pulse = 0.90 + 0.08*Math.sin(elapsed*2.2);
+    const s = sceneAtTime(elapsed);
+    if(s !== scene){
+      scene = s;
+      setTargets(targets[scene]);
+      disperse();
+    }
+
+    // movimiento y render
+    const k = (scene === 4) ? 0.72 : 1.0; // corazón se asienta más suave
+    stepParticles(k);
+
+    if(scene === 4){
+      const pulse = 0.90 + 0.08*Math.sin(elapsed*2.1);
       drawParticles(pulse);
+    } else {
+      drawParticles(0.96);
     }
 
     requestAnimationFrame(loop);
   }
 
-  // ====== UI ======
+  // ========= UI =========
   document.getElementById('go').addEventListener('click', restart);
   addEventListener('pointerdown', (e)=>{
     const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
