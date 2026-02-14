@@ -141,7 +141,7 @@
   <div class="ui">
     <div class="pill">
       <span>Para:</span>
-      <input id="name" value="Mi Amor" maxlength="24" />
+      <input id="name" value="Misita ❤️" maxlength="24" />
       <button id="go" class="btn">▶</button>
       <button id="musicBtn" class="btn musicBtn" title="Música">🔇</button>
     </div>
@@ -434,7 +434,7 @@
       drawHeartOfHearts(W/2, H*0.50, scale);
 
       const inside = isMobile ? Math.floor(Math.min(W,H)*0.055) : Math.floor(Math.min(W,H)*0.065);
-      drawCenteredText('I Love You', inside, H*0.48, 'rgba(255,143,233,.98)', 900);
+      drawCenteredText('TEE ADORO', inside, H*0.48, 'rgba(255,143,233,.98)', 900);
       drawCenteredText(name, Math.floor(inside*0.92), H*0.54, 'rgba(233,240,255,.95)', 800);
     }, 1.05);
 
@@ -476,7 +476,7 @@
 
   function restart(){
     hideFinal();
-    const name = (document.getElementById('name').value || 'Mi Amor').trim().slice(0,24);
+    const name = (document.getElementById('name').value || 'Misita').trim().slice(0,24);
     buildScenes(name);
     idx = -1;
     idxStart = 0;
