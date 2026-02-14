@@ -49,7 +49,7 @@
     .hint{pointer-events:none;opacity:.75;font-size:12px;line-height:1.2;text-align:right;font-weight:800;}
     @media (max-width:520px){ .hint{display:none;} .pill input{width:120px;} }
 
-    /* FINAL OVERLAY */
+    /* Final overlay */
     .finalOverlay{
       position:fixed; inset:0; z-index:9;
       display:flex; align-items:center; justify-content:center;
@@ -60,7 +60,6 @@
     }
     .finalOverlay.show{ opacity:1; pointer-events:auto; }
 
-    /* ✅ Tarjeta VERTICAL para que NO haya lados negros */
     .finalCard{
       position:relative;
       width:min(420px, 92vw);
@@ -73,7 +72,6 @@
       backdrop-filter: blur(8px);
     }
 
-    /* ✅ Zona imagen (arriba) */
     .photoArea{
       position:absolute;
       left:0; right:0; top:0;
@@ -85,18 +83,16 @@
       background:rgba(0,0,0,.10);
     }
 
-    /* ✅ Imagen COMPLETA sin recorte */
     .finalImg{
       width:100%;
       height:100%;
       object-fit:contain;      /* no recorta */
       object-position:center;
       border-radius:14px;
-      background:transparent;  /* sin fondo negro */
+      background:transparent;
       box-shadow:0 18px 50px rgba(0,0,0,.45);
     }
 
-    /* ✅ Texto bonito abajo, separado */
     .textArea{
       position:absolute;
       left:0; right:0;
@@ -140,16 +136,40 @@
       backdrop-filter: blur(8px);
       pointer-events:none;
     }
+
+    /* Música: botón mute */
+    .musicBtn{
+      pointer-events:auto;
+      margin-left:6px;
+      border:none; outline:none; cursor:pointer;
+      color:var(--text);
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      padding:8px 10px;
+      border-radius:999px;
+      font-weight:900;
+    }
+    .musicBtn.on{
+      background:rgba(255,79,216,.18);
+      border-color:rgba(255,79,216,.35);
+    }
   </style>
 </head>
 <body>
   <canvas id="c"></canvas>
+
+  <!-- ✅ Música (sube musica.mp3 al repo junto a index.html) -->
+  <audio id="bgm" preload="auto" loop>
+    <source src="musica.mp3" type="audio/mpeg" />
+    <source src="musica.ogg" type="audio/ogg" />
+  </audio>
 
   <div class="ui">
     <div class="pill">
       <span>Para:</span>
       <input id="name" value="Mi Amor" maxlength="24" />
       <button id="go">▶</button>
+      <button id="musicBtn" class="musicBtn" title="Música">🔊</button>
     </div>
     <div class="hint">Toca/clic para <b>reiniciar</b><br/>y ver la animación otra vez</div>
   </div>
@@ -172,7 +192,9 @@
 
 <script>
 (() => {
-  const FINAL_IMAGE_SRC = "final.png"; // <- tu imagen en el repo
+  // ✅ Archivos que deben existir en el repo
+  const FINAL_IMAGE_SRC = "final.png";  // tu imagen final
+  const MUSIC_SRC_HINT  = "musica.mp3"; // sube musica.mp3
 
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d', { alpha: true });
@@ -180,6 +202,47 @@
   const finalOverlay = document.getElementById('finalOverlay');
   const finalImg = document.getElementById('finalImg');
   finalImg.src = FINAL_IMAGE_SRC;
+
+  // ===== Música =====
+  const bgm = document.getElementById('bgm');
+  const musicBtn = document.getElementById('musicBtn');
+  let musicStarted = false;
+
+  async function startMusic(){
+    if(musicStarted) return;
+    musicStarted = true;
+    bgm.volume = 0.65; // 0.0 a 1.0
+    try{
+      await bgm.play();
+      musicBtn.classList.add('on');
+      musicBtn.textContent = '🔊';
+    }catch(e){
+      // Si el navegador bloquea autoplay, se intentará de nuevo en el siguiente toque
+      musicStarted = false;
+    }
+  }
+
+  function toggleMusic(){
+    if(!musicStarted){
+      startMusic();
+      return;
+    }
+    if(bgm.paused){
+      bgm.play().then(()=>{
+        musicBtn.classList.add('on');
+        musicBtn.textContent = '🔊';
+      }).catch(()=>{});
+    }else{
+      bgm.pause();
+      musicBtn.classList.remove('on');
+      musicBtn.textContent = '🔇';
+    }
+  }
+
+  musicBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    toggleMusic();
+  });
 
   // ===== CONFIG =====
   const CFG = {
@@ -479,16 +542,27 @@
     requestAnimationFrame(loop);
   }
 
-  document.getElementById('go').addEventListener('click', restart);
+  // ✅ Al darle ▶ inicia música (en móvil esto es lo correcto)
+  document.getElementById('go').addEventListener('click', async (e) => {
+    e.stopPropagation();
+    await startMusic();
+    restart();
+  });
+
+  // ✅ Primer toque/clic también intenta iniciar música y reinicia
   addEventListener('pointerdown', (e)=>{
     const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
     if(tag === 'input' || tag === 'button') return;
+    startMusic();
     restart();
   }, {passive:true});
 
   resize();
   restart();
   requestAnimationFrame(loop);
+
+  // Avisito: si no existe musica.mp3, no pasa nada, solo no sonará
+  // (pero tú súbela al repo para que funcione)
 })();
 </script>
 </body>
