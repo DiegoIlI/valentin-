@@ -1,3 +1,4 @@
+<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
@@ -140,7 +141,7 @@
   <div class="ui">
     <div class="pill">
       <span>Para:</span>
-      <input id="name" value="Misita" maxlength="24" />
+      <input id="name" value="Mi Amor" maxlength="24" />
       <button id="go" class="btn">▶</button>
       <button id="musicBtn" class="btn musicBtn" title="Música">🔇</button>
     </div>
@@ -521,4 +522,24 @@
   });
 
   // Tocar/clic fuera de botones reinicia (y si ya querías música, intenta reanudar)
-  addEventListener('
+  addEventListener('pointerdown', async (e)=>{
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    if(tag === 'input' || tag === 'button') return;
+
+    if(wantsMusic && bgm.paused){
+      await playMusicFromGesture();
+    }
+
+    restart();
+  }, {passive:true});
+
+  // UI inicial
+  setMusicUI(false);
+
+  resize();
+  restart();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
