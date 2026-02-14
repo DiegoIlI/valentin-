@@ -56,6 +56,7 @@
       opacity:0; pointer-events:none;
       transition:opacity 900ms ease;
       padding:clamp(12px,3vw,28px);
+      background:rgba(0,0,0,.20);
     }
     .finalOverlay.show{ opacity:1; pointer-events:auto; }
 
@@ -66,64 +67,64 @@
       border-radius:18px;
       overflow:hidden;
       box-shadow:0 30px 80px rgba(0,0,0,.55);
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(0,0,0,.25);
-      backdrop-filter:blur(6px);
+      border:1px solid rgba(255,255,255,.12);
+      background:#0b0c10;
     }
+
+    /* ✅ Imagen ajustada para verse mejor */
     .finalImg{
       position:absolute; inset:0;
       width:100%; height:100%;
-      object-fit:cover;
-      filter:saturate(1.05) contrast(1.02);
-      transform:scale(1.02);
-    }
-    .finalShade{
-      position:absolute; inset:0;
-      background:radial-gradient(70% 60% at 50% 50%, rgba(0,0,0,.15), rgba(0,0,0,.62));
+      object-fit:contain;              /* para que se vea completa */
+      object-position:center center;   /* centrada */
+      background:#07080d;              /* relleno elegante si sobran bordes */
+      filter:none !important;
+      transform:none !important;
     }
 
-    .note{
+    /* ✅ sombreado suave encima */
+    .finalShade{
+      position:absolute; inset:0;
+      background:radial-gradient(80% 70% at 50% 45%, rgba(0,0,0,.05), rgba(0,0,0,.60));
+      pointer-events:none;
+    }
+
+    /* ✅ TEXTO BLANCO (sin recuadro) */
+    .quote{
       position:absolute;
-      width:min(360px, 70vw);
-      padding:16px 16px 14px 16px;
-      border-radius:14px;
-      box-shadow:0 16px 40px rgba(0,0,0,.35);
-      border:1px solid rgba(0,0,0,.08);
-      font-weight:800;
+      top:18px;
+      left:18px;
+      right:18px;
+      max-width:620px;
+      color:rgba(255,255,255,.92);
+      font-weight:900;
       line-height:1.25;
+      font-size:clamp(14px, 1.6vw, 18px);
+      text-shadow:
+        0 3px 14px rgba(0,0,0,.75),
+        0 1px 2px rgba(0,0,0,.85);
       opacity:0;
-      transform:translateY(-14px) rotate(-2deg);
+      transform:translateY(-10px);
       transition:opacity 900ms ease, transform 900ms ease;
-      backdrop-filter: blur(2px);
+      pointer-events:none;
     }
-    .note b{ display:block; margin-bottom:8px; }
-    .note1{
-      top:clamp(12px,2.2vw,22px);
-      left:clamp(12px,2.2vw,22px);
-      background:linear-gradient(180deg, rgba(255,247,199,.98), rgba(255,236,150,.96));
-      color:#1b1b1b;
+    .finalOverlay.show .quote{
+      opacity:1;
+      transform:translateY(0);
     }
-    .note2{
-      bottom:clamp(12px,2.2vw,22px);
-      right:clamp(12px,2.2vw,22px);
-      background:linear-gradient(180deg, rgba(255,214,242,.98), rgba(255,176,227,.96));
-      color:#1b1b1b;
-      transform:translateY(16px) rotate(2.2deg);
-    }
-    .finalOverlay.show .note{ opacity:1; transform:translateY(0) rotate(-2deg); }
-    .finalOverlay.show .note2{ opacity:1; transform:translateY(0) rotate(2.2deg); }
 
     .closeTip{
       position:absolute; left:50%; bottom:12px;
       transform:translateX(-50%);
       font-size:12px; font-weight:900;
-      color:rgba(233,240,255,.85);
+      color:rgba(233,240,255,.9);
       text-shadow:0 2px 10px rgba(0,0,0,.7);
-      background:rgba(0,0,0,.28);
-      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.30);
+      border:1px solid rgba(255,255,255,.12);
       padding:8px 10px;
       border-radius:999px;
       backdrop-filter: blur(8px);
+      pointer-events:none;
     }
   </style>
 </head>
@@ -133,26 +134,21 @@
   <div class="ui">
     <div class="pill">
       <span>Para:</span>
-      <input id="name" value="Misita" maxlength="24" />
+      <input id="name" value="Mi Amor" maxlength="24" />
       <button id="go">▶</button>
     </div>
     <div class="hint">Toca/clic para <b>reiniciar</b><br/>y ver la animación otra vez</div>
   </div>
 
-  <!-- FINAL (IMAGEN + NOTAS) -->
+  <!-- FINAL -->
   <div class="finalOverlay" id="finalOverlay">
     <div class="finalCard">
       <img class="finalImg" id="finalImg" alt="Imagen final" />
       <div class="finalShade"></div>
 
-      <div class="note note1" id="note1">
-        <b>Nota 1:</b>
+      <!-- ✅ Solo el texto (sin Nota 1, sin recuadro) -->
+      <div class="quote" id="quote1">
         “Y jamás olvides que el brillo tuyo es tan intenso como el de mil soles”
-      </div>
-
-      <div class="note note2" id="note2">
-        <b>Nota 2:</b>
-        “Then come on give this lover boy a try i´ll put the saparkle right back in your eyer”
       </div>
 
       <div class="closeTip">Toca/clic para reiniciar ✨</div>
@@ -161,18 +157,19 @@
 
 <script>
 (() => {
-  // ====== CONFIG FINAL ======
-  // Cambia el nombre al archivo que subas al repo (en la misma carpeta que index.html)
-  const FINAL_IMAGE_SRC = "final.png";
+  const FINAL_IMAGE_SRC = "final.png"; // <-- nombre de tu imagen en el repo
 
-  // ===== CANVAS =====
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d', { alpha: true });
 
-  // ===== OVERLAY =====
   const finalOverlay = document.getElementById('finalOverlay');
   const finalImg = document.getElementById('finalImg');
   finalImg.src = FINAL_IMAGE_SRC;
+
+  // Si la imagen no carga:
+  finalImg.addEventListener('error', () => {
+    console.warn("No se pudo cargar la imagen final. Revisa el nombre/ruta:", FINAL_IMAGE_SRC);
+  });
 
   const CFG = {
     matrixFont: 16,
@@ -187,14 +184,11 @@
     settleSpeed: 0.095,
     disperseForce: 3.6,
 
-    // Duraciones (seg) — más tiempo para que se arme bonito
     d1: 2.2, d2: 2.2, d3: 2.2,
     dy: 2.0, da: 2.0, dm: 2.0, ds: 2.6,
-    // tiempo extra mostrando corazón antes de pasar a la imagen
-    heartHold: 3.4,
 
-    // “tiempo de armado” dentro de cada escena
-    buildTime: 1.6
+    heartHold: 3.6,
+    buildTime: 1.8
   };
 
   // ===== RESIZE =====
@@ -243,7 +237,7 @@
     ctx.shadowBlur = 0;
   }
 
-  // ===== OFFSCREEN (SIN SOMBRAS PARA TARGETS) =====
+  // ===== OFFSCREEN =====
   const off = document.createElement('canvas');
   const ox = off.getContext('2d');
 
@@ -286,7 +280,7 @@
     ox.restore();
   }
 
-  // ===== MINI HEART PATH (BORDES) =====
+  // ===== HEART OUTLINE MADE OF MINI HEARTS =====
   function stampHeart(ox, x, y, s, rot=0){
     ox.save();
     ox.translate(x,y);
@@ -367,9 +361,8 @@
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.fillStyle = CFG.particleColor;
-    ctx.shadowColor = CFG.particleGlow;
+    ctx.shadowColor = 'rgba(255,255,255,.20)';
     ctx.shadowBlur = 10;
-
     const r = CFG.particleRadius;
     for(const p of particles){
       ctx.beginPath();
@@ -428,9 +421,8 @@
     if(sec < cuts[4]) return 4;
     if(sec < cuts[5]) return 5;
     if(sec < cuts[6]) return 6;
-    return 7; // heart
+    return 7;
   }
-
   const easeOutCubic = t => 1 - Math.pow(1-t,3);
 
   function showFinal(){
@@ -438,7 +430,6 @@
     shownFinal = true;
     finalOverlay.classList.add('show');
   }
-
   function hideFinal(){
     finalOverlay.classList.remove('show');
     shownFinal = false;
@@ -466,19 +457,16 @@
       disperse();
     }
 
-    // armado bonito por escena
     const prog = Math.min(1, Math.max(0, (elapsed - idxStart) / CFG.buildTime));
     const k = 0.18 + 0.98 * easeOutCubic(prog);
     stepParticles(k);
 
     const alpha = 0.70 + 0.30 * easeOutCubic(prog);
 
-    // corazón + pulse
     if(idx === 7){
       const pulse = 0.90 + 0.08*Math.sin(elapsed*2.0);
       drawParticles(Math.min(1, alpha * pulse));
 
-      // cuando el corazón lleva un rato, mostramos imagen + notas
       if((elapsed - idxStart) > CFG.heartHold){
         showFinal();
       }
@@ -489,16 +477,13 @@
     requestAnimationFrame(loop);
   }
 
-  // ===== UI =====
   document.getElementById('go').addEventListener('click', restart);
-
   addEventListener('pointerdown', (e)=>{
     const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
     if(tag === 'input' || tag === 'button') return;
     restart();
   }, {passive:true});
 
-  // init
   resize();
   restart();
   requestAnimationFrame(loop);
