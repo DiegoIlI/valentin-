@@ -94,8 +94,8 @@
     glowColor: 'rgba(255,79,216,0.55)',
 
     particleColor: 'rgba(255,255,255,0.95)',
-    particleCountDesktop: 1900,
-    particleCountMobile: 1400,
+    particleCountDesktop: 1400,
+    particleCountMobile: 1000,
 
     settleSpeed: 0.078,     // qué tan rápido se “arma”
     heartStampColor: 'rgba(255,79,216,.95)',
@@ -341,7 +341,7 @@
       const inside = isMobile ? Math.floor(Math.min(W,H)*0.045) : Math.floor(Math.min(W,H)*0.055);
       drawCenteredText(ox, 'I Love You', inside, H*0.48, 'rgba(255,143,233,.98)', 800);
       drawCenteredText(ox, name, Math.floor(inside*0.92), H*0.54, 'rgba(233,240,255,.95)', 700);
-    }, 1.35);
+    }, 0.8);
 
     targets = [s1, s2, s3, sText, sHeart];
   }
