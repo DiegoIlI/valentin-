@@ -5,10 +5,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>💘 14 de Febrero</title>
   <style>
-    :root{ --bg:#05060a; --pink:#ff4fd8; --text:#e9f0ff; }
-    html,body{height:100%;margin:0;background:var(--bg);overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;}
-    canvas{position:fixed;inset:0;width:100%;height:100%;}
+    :root{
+      --bg:#05060a;
+      --pink:#ff4fd8;
+      --text:#e9f0ff;
+    }
+    html,body{
+      height:100%;
+      margin:0;
+      background:var(--bg);
+      overflow:hidden;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    }
+    canvas{ position:fixed; inset:0; width:100%; height:100%; }
 
+    /* UI */
     .ui{
       position:fixed;left:0;right:0;top:0;z-index:10;
       display:flex;justify-content:space-between;align-items:center;
@@ -29,44 +40,16 @@
       width:150px;max-width:46vw;border:none;outline:none;background:transparent;
       color:var(--text);font-weight:900;
     }
-    .btn{
+    .pill button{
       border:none;outline:none;cursor:pointer;color:var(--text);
       background:rgba(255,79,216,.18);
       border:1px solid rgba(255,79,216,.35);
       padding:8px 10px;border-radius:999px;font-weight:900;
     }
-    .musicBtn{
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.14);
-      min-width:42px;
-    }
-    .musicBtn.on{
-      background:rgba(255,79,216,.18);
-      border-color:rgba(255,79,216,.35);
-    }
     .hint{pointer-events:none;opacity:.75;font-size:12px;line-height:1.2;text-align:right;font-weight:800;}
     @media (max-width:520px){ .hint{display:none;} .pill input{width:120px;} }
 
-    .toast{
-      position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
-      z-index:20;
-      background:rgba(0,0,0,.55);
-      border:1px solid rgba(255,255,255,.14);
-      color:rgba(255,255,255,.95);
-      padding:10px 12px;
-      border-radius:999px;
-      backdrop-filter:blur(10px);
-      box-shadow:0 18px 60px rgba(0,0,0,.55);
-      font-weight:800;
-      font-size:13px;
-      opacity:0;
-      pointer-events:none;
-      transition:opacity 250ms ease;
-      max-width:min(92vw, 700px);
-      text-align:center;
-    }
-    .toast.show{opacity:1;}
-
+    /* Final overlay */
     .finalOverlay{
       position:fixed; inset:0; z-index:9;
       display:flex; align-items:center; justify-content:center;
@@ -79,8 +62,8 @@
 
     .finalCard{
       position:relative;
-      width:min(640px, 92vw);
-      height:min(900px, 84vh);
+      width:min(420px, 92vw);
+      height:min(780px, 82vh);
       border-radius:18px;
       overflow:hidden;
       box-shadow:0 30px 80px rgba(0,0,0,.55);
@@ -88,158 +71,171 @@
       background:rgba(10,12,20,.35);
       backdrop-filter: blur(8px);
     }
+
     .photoArea{
-      position:absolute; left:0; right:0; top:0; height:74%;
-      display:flex; align-items:center; justify-content:center;
+      position:absolute;
+      left:0; right:0; top:0;
+      height:72%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       padding:14px 14px 8px;
+      background:rgba(0,0,0,.10);
     }
+
     .finalImg{
-      width:100%; height:100%;
-      object-fit:cover; object-position:center;
+      width:100%;
+      height:100%;
+      object-fit:contain;      /* no recorta */
+      object-position:center;
       border-radius:14px;
       background:transparent;
       box-shadow:0 18px 50px rgba(0,0,0,.45);
     }
+
     .textArea{
-      position:absolute; left:0; right:0; bottom:0; height:26%;
-      display:flex; align-items:center; justify-content:center;
-      padding:18px 20px 28px;
+      position:absolute;
+      left:0; right:0;
+      bottom:0;
+      height:28%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px 20px 22px;
     }
+
     .quote{
       text-align:center;
       color:rgba(255,255,255,.96);
       font-weight:900;
       line-height:1.25;
-      font-size:clamp(16px, 2.0vw, 22px);
-      text-shadow:0 3px 18px rgba(0,0,0,.85), 0 1px 3px rgba(0,0,0,.85);
-      opacity:0; transform:translateY(10px);
+      font-size:clamp(16px, 2.0vw, 20px);
+      text-shadow:
+        0 3px 18px rgba(0,0,0,.85),
+        0 1px 3px rgba(0,0,0,.85);
+      opacity:0;
+      transform:translateY(10px);
       transition:opacity 900ms ease, transform 900ms ease;
-      max-width:46ch;
+      max-width:34ch;
     }
-    .finalOverlay.show .quote{opacity:1;transform:translateY(0);}
+    .finalOverlay.show .quote{
+      opacity:1;
+      transform:translateY(0);
+    }
+
     .closeTip{
-      position:absolute; left:50%; bottom:10px; transform:translateX(-50%);
+      position:absolute; left:50%; bottom:10px;
+      transform:translateX(-50%);
       font-size:12px; font-weight:900;
       color:rgba(233,240,255,.9);
       text-shadow:0 2px 10px rgba(0,0,0,.7);
       background:rgba(0,0,0,.30);
       border:1px solid rgba(255,255,255,.12);
-      padding:8px 10px; border-radius:999px;
+      padding:8px 10px;
+      border-radius:999px;
       backdrop-filter: blur(8px);
       pointer-events:none;
+    }
+
+    /* Música: botón mute */
+    .musicBtn{
+      pointer-events:auto;
+      margin-left:6px;
+      border:none; outline:none; cursor:pointer;
+      color:var(--text);
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.14);
+      padding:8px 10px;
+      border-radius:999px;
+      font-weight:900;
+    }
+    .musicBtn.on{
+      background:rgba(255,79,216,.18);
+      border-color:rgba(255,79,216,.35);
     }
   </style>
 </head>
 <body>
   <canvas id="c"></canvas>
 
-  <!-- ✅ Asegúrate que musica.mp3 esté en la misma carpeta que index.html -->
-  <audio id="bgm" preload="auto" loop playsinline webkit-playsinline>
+  <!-- ✅ Música (sube musica.mp3 al repo junto a index.html) -->
+  <audio id="bgm" preload="auto" loop>
     <source src="musica.mp3" type="audio/mpeg" />
+    <source src="musica.ogg" type="audio/ogg" />
   </audio>
 
   <div class="ui">
     <div class="pill">
       <span>Para:</span>
-      <input id="name" value="Misita ❤️" maxlength="24" />
-      <button id="go" class="btn">▶</button>
-      <button id="musicBtn" class="btn musicBtn" title="Música">🔇</button>
+      <input id="name" value="Misita❤️" maxlength="24" />
+      <button id="go">▶</button>
+      <button id="musicBtn" class="musicBtn" title="Música">🔊</button>
     </div>
     <div class="hint">Toca/clic para <b>reiniciar</b><br/>y ver la animación otra vez</div>
   </div>
-
-  <div class="toast" id="toast"></div>
 
   <div class="finalOverlay" id="finalOverlay">
     <div class="finalCard">
       <div class="photoArea">
         <img class="finalImg" id="finalImg" alt="Imagen final" />
       </div>
+
       <div class="textArea">
         <div class="quote" id="quote1">
           “Y jamás olvides que el brillo tuyo es tan intenso como el de mil soles”
         </div>
       </div>
+
       <div class="closeTip">Toca/clic para reiniciar ✨</div>
     </div>
   </div>
 
 <script>
 (() => {
-  const FINAL_IMAGE_SRC = "final.png";
-  const MUSIC_SRC = "musica.mp3";
-
-  const toastEl = document.getElementById('toast');
-  function toast(msg){
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    clearTimeout(toastEl._t);
-    toastEl._t = setTimeout(()=>toastEl.classList.remove('show'), 3800);
-  }
+  // ✅ Archivos que deben existir en el repo
+  const FINAL_IMAGE_SRC = "final.png";  // tu imagen final
+  const MUSIC_SRC_HINT  = "musica.mp3"; // sube musica.mp3
 
   const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d', { alpha:true });
+  const ctx = canvas.getContext('2d', { alpha: true });
 
   const finalOverlay = document.getElementById('finalOverlay');
   const finalImg = document.getElementById('finalImg');
   finalImg.src = FINAL_IMAGE_SRC;
 
-  // ===== AUDIO (simple y confiable) =====
+  // ===== Música =====
   const bgm = document.getElementById('bgm');
-  bgm.src = MUSIC_SRC;
-
   const musicBtn = document.getElementById('musicBtn');
-  let wantsMusic = false;
+  let musicStarted = false;
 
-  function setMusicUI(on){
-    if(on){
+  async function startMusic(){
+    if(musicStarted) return;
+    musicStarted = true;
+    bgm.volume = 0.65; // 0.0 a 1.0
+    try{
+      await bgm.play();
       musicBtn.classList.add('on');
       musicBtn.textContent = '🔊';
+    }catch(e){
+      // Si el navegador bloquea autoplay, se intentará de nuevo en el siguiente toque
+      musicStarted = false;
+    }
+  }
+
+  function toggleMusic(){
+    if(!musicStarted){
+      startMusic();
+      return;
+    }
+    if(bgm.paused){
+      bgm.play().then(()=>{
+        musicBtn.classList.add('on');
+        musicBtn.textContent = '🔊';
+      }).catch(()=>{});
     }else{
+      bgm.pause();
       musicBtn.classList.remove('on');
       musicBtn.textContent = '🔇';
-    }
-  }
-
-  bgm.addEventListener('error', () => {
-    toast("No se pudo cargar musica.mp3. Revisa que exista y que Pages lo publique.");
-  });
-
-  async function playMusicFromGesture(){
-    wantsMusic = true;
-    setMusicUI(true);
-
-    try{
-      bgm.volume = 0.75;
-      bgm.muted = false;
-
-      // Esto fuerza a recargar el mp3 si el navegador trae cache raro
-      if(!bgm.currentSrc || !bgm.currentSrc.includes(MUSIC_SRC)){
-        bgm.src = MUSIC_SRC;
-      }
-
-      await bgm.play();
-    }catch(err){
-      // iPhone/Android a veces bloquean si está en modo silencio o volumen bajo
-      setMusicUI(false);
-      wantsMusic = false;
-
-      toast("Audio bloqueado. Sube el volumen y quita modo silencio. Luego toca ▶ otra vez.");
-      console.log("Audio play error:", err);
-    }
-  }
-
-  function pauseMusic(){
-    wantsMusic = false;
-    setMusicUI(false);
-    try{ bgm.pause(); }catch(e){}
-  }
-
-  async function toggleMusic(){
-    if(bgm.paused){
-      await playMusicFromGesture();
-    }else{
-      pauseMusic();
     }
   }
 
@@ -248,16 +244,27 @@
     toggleMusic();
   });
 
-  // ===== ANIMACIÓN (igual que tu versión) =====
+  // ===== CONFIG =====
   const CFG = {
-    matrixFont: 16, matrixSpeed: 1.10, matrixFade: 0.085,
-    matrixColor: 'rgba(255,79,216,0.85)', glowColor:'rgba(255,79,216,0.55)',
-    particleColor:'rgba(255,255,255,0.95)', particleRadius:1.2,
-    settleSpeed:0.095, disperseForce:3.6,
-    d1:2.2,d2:2.2,d3:2.2, dy:2.0,da:2.0,dm:2.0,ds:2.6,
-    heartHold:3.6, buildTime:1.8
+    matrixFont: 16,
+    matrixSpeed: 1.10,
+    matrixFade: 0.085,
+    matrixColor: 'rgba(255,79,216,0.85)',
+    glowColor: 'rgba(255,79,216,0.55)',
+
+    particleColor: 'rgba(255,255,255,0.95)',
+    particleRadius: 1.2,
+    settleSpeed: 0.095,
+    disperseForce: 3.6,
+
+    d1: 2.2, d2: 2.2, d3: 2.2,
+    dy: 2.0, da: 2.0, dm: 2.0, ds: 2.6,
+
+    heartHold: 3.6,
+    buildTime: 1.8
   };
 
+  // ===== RESIZE =====
   let W=0,H=0,DPR=1;
   function resize(){
     DPR = Math.min(2, window.devicePixelRatio || 1);
@@ -272,6 +279,7 @@
   }
   addEventListener('resize', resize, {passive:true});
 
+  // ===== MATRIX =====
   const chars = ('01アイウエオカキクケコサシスセソタチツテトナニヌネノ' +
                  'ハヒフヘホマミムメモヤユヨラリルレロワヲン' +
                  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' +
@@ -302,6 +310,7 @@
     ctx.shadowBlur = 0;
   }
 
+  // ===== OFFSCREEN =====
   const off = document.createElement('canvas');
   const ox = off.getContext('2d');
 
@@ -309,15 +318,20 @@
     off.width = W; off.height = H;
     ox.setTransform(1,0,0,1,0,0);
     ox.clearRect(0,0,W,H);
+    ox.shadowBlur = 0;
+    ox.shadowColor = 'transparent';
+    ox.globalAlpha = 1;
   }
 
   function makeTarget(drawFn, density=1.0){
     resetOffscreen();
     drawFn(ox);
+
     const img = ox.getImageData(0,0,W,H).data;
     const pts = [];
     const base = Math.max(2, Math.round(Math.min(W,H)/240));
     const step = Math.max(2, Math.round(base / density));
+
     for(let y=0;y<H;y+=step){
       for(let x=0;x<W;x+=step){
         const a = img[(y*W + x)*4 + 3];
@@ -332,11 +346,13 @@
     ox.textAlign='center';
     ox.textBaseline='middle';
     ox.fillStyle=color;
+    ox.shadowBlur = 0;
     ox.font=`${weight} ${size}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
     ox.fillText(text, W/2, y);
     ox.restore();
   }
 
+  // ===== HEART OUTLINE OF MINI HEARTS =====
   function stampHeart(ox, x, y, s, rot=0){
     ox.save();
     ox.translate(x,y);
@@ -350,12 +366,14 @@
     ox.fill();
     ox.restore();
   }
+
   function drawHeartOfHearts(cx, cy, scale){
     ox.save();
     ox.translate(cx, cy);
     const isMobile = W < 700;
     const count = isMobile ? 220 : 320;
     const s = isMobile ? 10 : 9;
+
     ox.fillStyle = 'rgba(255,79,216,.95)';
     for(let i=0;i<count;i++){
       const t = (i/(count-1))*Math.PI*2;
@@ -375,12 +393,16 @@
     ox.restore();
   }
 
+  // ===== PARTICLES =====
   let particles=[];
   function reinitParticlesToPoints(points){
     particles = new Array(points.length).fill(0).map((_,i)=>({
-      x: Math.random()*W, y: Math.random()*H,
-      vx:(Math.random()-0.5)*2, vy:(Math.random()-0.5)*2,
-      tx: points[i].x, ty: points[i].y,
+      x: Math.random()*W,
+      y: Math.random()*H,
+      vx:(Math.random()-0.5)*2,
+      vy:(Math.random()-0.5)*2,
+      tx: points[i].x,
+      ty: points[i].y,
     }));
   }
   function disperse(){
@@ -396,7 +418,8 @@
       const dy = p.ty - p.y;
       p.vx = p.vx*0.86 + dx*s;
       p.vy = p.vy*0.86 + dy*s;
-      p.x += p.vx; p.y += p.vy;
+      p.x += p.vx;
+      p.y += p.vy;
     }
   }
   function drawParticles(alpha=1){
@@ -414,6 +437,7 @@
     ctx.restore();
   }
 
+  // ===== SCENES =====
   let scenes=[];
   function buildScenes(name){
     const isMobile = W < 700;
@@ -441,8 +465,9 @@
     scenes = [one,two,three,you,are,my,sunshine,heart];
   }
 
-  let t0=0, idx=-1, idxStart=0, shownFinal=false;
-  const easeOutCubic = t => 1 - Math.pow(1-t,3);
+  // ===== TIMELINE =====
+  let t0=0, idx=-1, idxStart=0;
+  let shownFinal = false;
 
   function idxAtTime(sec){
     const cuts = [
@@ -463,6 +488,7 @@
     if(sec < cuts[6]) return 6;
     return 7;
   }
+  const easeOutCubic = t => 1 - Math.pow(1-t,3);
 
   function showFinal(){
     if(shownFinal) return;
@@ -505,40 +531,38 @@
     if(idx === 7){
       const pulse = 0.90 + 0.08*Math.sin(elapsed*2.0);
       drawParticles(Math.min(1, alpha * pulse));
-      if((elapsed - idxStart) > CFG.heartHold) showFinal();
-    }else{
+
+      if((elapsed - idxStart) > CFG.heartHold){
+        showFinal();
+      }
+    } else {
       drawParticles(alpha);
     }
 
     requestAnimationFrame(loop);
   }
 
-  const goBtn = document.getElementById('go');
-  goBtn.addEventListener('click', async (e)=>{
+  // ✅ Al darle ▶ inicia música (en móvil esto es lo correcto)
+  document.getElementById('go').addEventListener('click', async (e) => {
     e.stopPropagation();
-    // ✅ aquí sí o sí es gesto del usuario
-    await playMusicFromGesture();
+    await startMusic();
     restart();
   });
 
-  // Tocar/clic fuera de botones reinicia (y si ya querías música, intenta reanudar)
-  addEventListener('pointerdown', async (e)=>{
+  // ✅ Primer toque/clic también intenta iniciar música y reinicia
+  addEventListener('pointerdown', (e)=>{
     const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
     if(tag === 'input' || tag === 'button') return;
-
-    if(wantsMusic && bgm.paused){
-      await playMusicFromGesture();
-    }
-
+    startMusic();
     restart();
   }, {passive:true});
-
-  // UI inicial
-  setMusicUI(false);
 
   resize();
   restart();
   requestAnimationFrame(loop);
+
+  // Avisito: si no existe musica.mp3, no pasa nada, solo no sonará
+  // (pero tú súbela al repo para que funcione)
 })();
 </script>
 </body>
