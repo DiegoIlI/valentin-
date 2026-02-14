@@ -5,61 +5,32 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>💘 14 de Febrero</title>
   <style>
-    :root{
-      --bg:#05060a;
-      --pink:#ff4fd8;
-      --text:#e9f0ff;
-    }
-    html,body{height:100%; margin:0; background:var(--bg); overflow:hidden; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;}
-    canvas{position:fixed; inset:0; width:100%; height:100%;}
+    :root{ --bg:#05060a; --pink:#ff4fd8; --text:#e9f0ff; }
+    html,body{height:100%;margin:0;background:var(--bg);overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+    canvas{position:fixed;inset:0;width:100%;height:100%;}
     .ui{
-      position:fixed; left:0; right:0; top:0;
-      display:flex; justify-content:space-between; align-items:center;
-      padding:12px 14px; gap:10px;
-      pointer-events:none;
-      color:rgba(233,240,255,.9);
-      text-shadow:0 2px 10px rgba(0,0,0,.6);
-      font-weight:700;
-      z-index:5;
+      position:fixed;left:0;right:0;top:0;z-index:5;
+      display:flex;justify-content:space-between;align-items:center;
+      padding:12px 14px;gap:10px;pointer-events:none;
+      color:rgba(233,240,255,.9);text-shadow:0 2px 10px rgba(0,0,0,.6);font-weight:800;
     }
     .pill{
-      pointer-events:auto;
-      backdrop-filter: blur(10px);
-      background: rgba(10,12,20,.45);
-      border: 1px solid rgba(255,255,255,.10);
-      padding:10px 12px;
-      border-radius:999px;
-      display:flex; align-items:center; gap:10px;
-      box-shadow: 0 10px 25px rgba(0,0,0,.25);
+      pointer-events:auto;backdrop-filter:blur(10px);
+      background:rgba(10,12,20,.45);border:1px solid rgba(255,255,255,.10);
+      padding:10px 12px;border-radius:999px;display:flex;align-items:center;gap:10px;
+      box-shadow:0 10px 25px rgba(0,0,0,.25);
     }
     .pill input{
-      width: 150px; max-width: 46vw;
-      border:none; outline:none;
-      background:transparent;
-      color: var(--text);
-      font-weight:800;
+      width:150px;max-width:46vw;border:none;outline:none;background:transparent;
+      color:var(--text);font-weight:900;
     }
     .pill button{
-      border:none; outline:none; cursor:pointer;
-      color: var(--text);
-      background: rgba(255,79,216,.18);
-      border:1px solid rgba(255,79,216,.35);
-      padding:8px 10px;
-      border-radius:999px;
-      font-weight:900;
+      border:none;outline:none;cursor:pointer;color:var(--text);
+      background:rgba(255,79,216,.18);border:1px solid rgba(255,79,216,.35);
+      padding:8px 10px;border-radius:999px;font-weight:900;
     }
-    .hint{
-      pointer-events:none;
-      opacity:.75;
-      font-size:12px;
-      line-height:1.2;
-      text-align:right;
-      font-weight:700;
-    }
-    @media (max-width:520px){
-      .hint{display:none;}
-      .pill input{width: 120px;}
-    }
+    .hint{pointer-events:none;opacity:.75;font-size:12px;line-height:1.2;text-align:right;font-weight:800;}
+    @media (max-width:520px){ .hint{display:none;} .pill input{width:120px;} }
   </style>
 </head>
 <body>
@@ -68,12 +39,10 @@
   <div class="ui">
     <div class="pill">
       <span>Para:</span>
-      <input id="name" value="Misita" maxlength="24" />
+      <input id="name" value="Mi Amor" maxlength="24" />
       <button id="go">▶</button>
     </div>
-    <div class="hint">
-      Toca/clic para <b>reiniciar</b><br/>y ver la animación otra vez
-    </div>
+    <div class="hint">Toca/clic para <b>reiniciar</b><br/>y ver la animación otra vez</div>
   </div>
 
 <script>
@@ -81,34 +50,37 @@
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d', { alpha: true });
 
-  // ===== Config =====
+  // ===== CONFIG =====
   const CFG = {
     matrixFont: 16,
-    matrixSpeed: 1.2,
+    matrixSpeed: 1.15,
     matrixFade: 0.085,
     matrixColor: 'rgba(255,79,216,0.85)',
     glowColor: 'rgba(255,79,216,0.55)',
 
     particleColor: 'rgba(255,255,255,0.95)',
-    settleSpeed: 0.085,
-    disperseForce: 4.5, // menos “explosión” para que se armen más rápido
+    settleSpeed: 0.09,
+    disperseForce: 4.2,
 
-    // Duraciones (segundos) — más tiempo para que sí se formen bien
-    d1: 1.8,   // 1
-    d2: 1.8,   // 2
-    d3: 1.8,   // 3
-    dText: 6.0,// you are my sunshine
-    dHold: 9999 // corazón al final
+    // Duraciones (segundos)
+    d1: 1.5,   // 1
+    d2: 1.5,   // 2
+    d3: 1.5,   // 3
+    dy: 1.35,  // you
+    da: 1.35,  // are
+    dm: 1.35,  // my
+    ds: 1.90,  // sunshine
+    dHold: 9999
   };
 
-  // ===== Resize =====
-  let W=0, H=0, DPR=1;
+  // ===== RESIZE =====
+  let W=0,H=0,DPR=1;
   function resize(){
     DPR = Math.min(2, window.devicePixelRatio || 1);
     W = Math.floor(innerWidth);
     H = Math.floor(innerHeight);
-    canvas.width = Math.floor(W * DPR);
-    canvas.height = Math.floor(H * DPR);
+    canvas.width = Math.floor(W*DPR);
+    canvas.height = Math.floor(H*DPR);
     canvas.style.width = W+'px';
     canvas.style.height = H+'px';
     ctx.setTransform(DPR,0,0,DPR,0,0);
@@ -116,7 +88,7 @@
   }
   addEventListener('resize', resize, {passive:true});
 
-  // ===== Matrix =====
+  // ===== MATRIX =====
   const chars = ('01アイウエオカキクケコサシスセソタチツテトナニヌネノ' +
                  'ハヒフヘホマミムメモヤユヨラリルレロワヲン' +
                  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' +
@@ -135,6 +107,7 @@
       const x = i*CFG.matrixFont;
       const y = drops[i];
       const ch = chars[(Math.random()*chars.length)|0];
+
       ctx.fillStyle = CFG.matrixColor;
       ctx.shadowColor = CFG.glowColor;
       ctx.shadowBlur = 12;
@@ -146,7 +119,7 @@
     ctx.shadowBlur = 0;
   }
 
-  // ===== Offscreen → puntos =====
+  // ===== OFFSCREEN → POINTS =====
   const off = document.createElement('canvas');
   const ox = off.getContext('2d');
 
@@ -158,7 +131,6 @@
     const img = ox.getImageData(0,0,W,H).data;
     const pts = [];
 
-    // step: más pequeño = más puntos
     const base = Math.max(2, Math.round(Math.min(W,H)/240));
     const step = Math.max(2, Math.round(base / density));
 
@@ -183,46 +155,48 @@
     ox.restore();
   }
 
-  // corazón con corazoncitos en el borde (tipo video)
+  // Corazón estilo TikTok: borde con mini ❤
   function drawHeartOfHearts(cx, cy, scale){
     ox.save();
     ox.translate(cx, cy);
 
     const isMobile = W < 700;
-    const count = isMobile ? 180 : 240;
+    const count = isMobile ? 190 : 260;
     const stampSize = Math.max(10, Math.floor(Math.min(W,H) * (isMobile ? 0.020 : 0.017)));
 
     ox.font = `900 ${stampSize}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
-    ox.textAlign = 'center';
-    ox.textBaseline = 'middle';
-    ox.fillStyle = 'rgba(255,79,216,.95)';
-    ox.shadowColor = 'rgba(255,79,216,.60)';
-    ox.shadowBlur = 18;
+    ox.textAlign='center';
+    ox.textBaseline='middle';
+    ox.fillStyle='rgba(255,79,216,.95)';
+    ox.shadowColor='rgba(255,79,216,.60)';
+    ox.shadowBlur=18;
 
     for(let i=0;i<count;i++){
-      const t = (i/(count-1)) * Math.PI * 2;
+      const t = (i/(count-1)) * Math.PI*2;
+
       const x = 16*Math.pow(Math.sin(t),3);
       const y = -(13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
-      const px = x * scale;
-      const py = y * scale;
+
+      const px = x*scale;
+      const py = y*scale;
 
       const t2 = t + 0.02;
       const x2 = 16*Math.pow(Math.sin(t2),3);
       const y2 = -(13*Math.cos(t2) - 5*Math.cos(2*t2) - 2*Math.cos(3*t2) - Math.cos(4*t2));
-      const ang = Math.atan2((y2-y), (x2-x)) + Math.PI/2;
+      const ang = Math.atan2((y2-y),(x2-x)) + Math.PI/2;
 
       ox.save();
-      ox.translate(px, py);
+      ox.translate(px,py);
       ox.rotate(ang);
-      ox.fillText('❤', 0, 0);
+      ox.fillText('❤',0,0);
       ox.restore();
 
       if(i % 3 === 0){
         ox.save();
-        ox.translate(px*0.985, py*0.985);
+        ox.translate(px*0.985,py*0.985);
         ox.rotate(ang);
         ox.globalAlpha = 0.85;
-        ox.fillText('❤', 0, 0);
+        ox.fillText('❤',0,0);
         ox.restore();
         ox.globalAlpha = 1;
       }
@@ -231,31 +205,18 @@
     ox.restore();
   }
 
-  // ===== Partículas =====
+  // ===== PARTICLES =====
   let particles=[];
-  function initParticles(n){
-    particles = new Array(n).fill(0).map(()=>({
+  function reinitParticlesToPoints(points){
+    // CLAVE: nunca más se amontonan
+    particles = new Array(points.length).fill(0).map((_,i)=>({
       x: Math.random()*W,
       y: Math.random()*H,
       vx:(Math.random()-0.5)*2,
       vy:(Math.random()-0.5)*2,
-      tx: Math.random()*W,
-      ty: Math.random()*H,
+      tx: points[i].x,
+      ty: points[i].y,
     }));
-  }
-
-  function setTargets(points){
-    // IMPORTANTE: solo asigna hasta donde hay puntos (evita amontonamiento)
-    const n = Math.min(particles.length, points.length);
-    for(let i=0;i<n;i++){
-      particles[i].tx = points[i].x;
-      particles[i].ty = points[i].y;
-    }
-    // si sobran partículas (raro), las mandamos lejos para que no estorben
-    for(let i=n;i<particles.length;i++){
-      particles[i].tx = -9999;
-      particles[i].ty = -9999;
-    }
   }
 
   function stepParticles(k){
@@ -284,89 +245,89 @@
     ctx.shadowColor = 'rgba(255,255,255,.25)';
     ctx.shadowBlur = 10;
     for(const p of particles){
-      if(p.tx < -1000) continue;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 1.35, 0, Math.PI*2);
+      ctx.arc(p.x,p.y,1.35,0,Math.PI*2);
       ctx.fill();
     }
     ctx.restore();
   }
 
-  // ===== Escenas =====
-  let targets = [];
+  // ===== SCENES =====
+  let scenes = [];
   function buildScenes(name){
     const isMobile = W < 700;
 
     const bigNum = isMobile ? Math.min(W,H)*0.36 : Math.min(W,H)*0.44;
-    const lineSize = isMobile ? Math.floor(Math.min(W,H)*0.115) : Math.floor(Math.min(W,H)*0.155);
+    const wordSize = isMobile ? Math.floor(Math.min(W,H)*0.15) : Math.floor(Math.min(W,H)*0.19);
 
-    // AUMENTAMOS densidad de 1/2/3 para que NO se haga “bloque”
-    const s1 = makeTarget(()=> drawCenteredText('1', Math.floor(bigNum), H*0.50), 1.35);
-    const s2 = makeTarget(()=> drawCenteredText('2', Math.floor(bigNum), H*0.50), 1.35);
-    const s3 = makeTarget(()=> drawCenteredText('3', Math.floor(bigNum), H*0.50), 1.35);
+    // Densidad alta en números para que se vean definidos
+    const one = makeTarget(()=>drawCenteredText('1', Math.floor(bigNum), H*0.50), 1.45);
+    const two = makeTarget(()=>drawCenteredText('2', Math.floor(bigNum), H*0.50), 1.45);
+    const three = makeTarget(()=>drawCenteredText('3', Math.floor(bigNum), H*0.50), 1.45);
 
-    const sText = makeTarget(()=>{
-      drawCenteredText('you',      lineSize, H*0.30);
-      drawCenteredText('are',      lineSize, H*0.44);
-      drawCenteredText('my',       lineSize, H*0.58);
-      drawCenteredText('sunshine', lineSize, H*0.72);
-    }, 1.20);
+    const you = makeTarget(()=>drawCenteredText('you', wordSize, H*0.52), 1.25);
+    const are = makeTarget(()=>drawCenteredText('are', wordSize, H*0.52), 1.25);
+    const my  = makeTarget(()=>drawCenteredText('my',  wordSize, H*0.52), 1.25);
+    const sunshine = makeTarget(()=>drawCenteredText('sunshine', wordSize, H*0.52), 1.15);
 
-    const sHeart = makeTarget(()=>{
+    const heart = makeTarget(()=>{
       const scale = isMobile ? Math.min(W,H)*0.014 : Math.min(W,H)*0.017;
       drawHeartOfHearts(W/2, H*0.50, scale);
 
       const inside = isMobile ? Math.floor(Math.min(W,H)*0.045) : Math.floor(Math.min(W,H)*0.055);
       drawCenteredText('I Love You', inside, H*0.48, 'rgba(255,143,233,.98)', 800);
       drawCenteredText(name, Math.floor(inside*0.92), H*0.54, 'rgba(233,240,255,.95)', 700);
-    }, 1.98);
+    }, 1.0);
 
-    targets = [s1, s2, s3, sText, sHeart];
-
-    // Partículas se ajustan al target MÁS PEQUEÑO (clave para que no se amontonen)
-    const minPts = Math.min(...targets.map(t => t.length));
-    const desired = isMobile ? 1100 : 1500;
-    const n = Math.max(650, Math.min(desired, minPts));
-    initParticles(n);
+    scenes = [one,two,three,you,are,my,sunshine,heart];
   }
 
-  // ===== Timeline =====
-  let t0=0, scene=-1;
+  // ===== TIMELINE =====
+  let t0=0, idx=-1;
 
-  function sceneAtTime(sec){
-    const a = CFG.d1;
-    const b = a + CFG.d2;
-    const c = b + CFG.d3;
-    const d = c + CFG.dText;
-    if(sec < a) return 0;
-    if(sec < b) return 1;
-    if(sec < c) return 2;
-    if(sec < d) return 3;
-    return 4;
+  function idxAtTime(sec){
+    const cuts = [
+      CFG.d1,
+      CFG.d1+CFG.d2,
+      CFG.d1+CFG.d2+CFG.d3,
+      CFG.d1+CFG.d2+CFG.d3+CFG.dy,
+      CFG.d1+CFG.d2+CFG.d3+CFG.dy+CFG.da,
+      CFG.d1+CFG.d2+CFG.d3+CFG.dy+CFG.da+CFG.dm,
+      CFG.d1+CFG.d2+CFG.d3+CFG.dy+CFG.da+CFG.dm+CFG.ds,
+    ];
+    if(sec < cuts[0]) return 0; // 1
+    if(sec < cuts[1]) return 1; // 2
+    if(sec < cuts[2]) return 2; // 3
+    if(sec < cuts[3]) return 3; // you
+    if(sec < cuts[4]) return 4; // are
+    if(sec < cuts[5]) return 5; // my
+    if(sec < cuts[6]) return 6; // sunshine
+    return 7; // heart
   }
 
   function restart(){
     const name = (document.getElementById('name').value || 'Mi Amor').trim().slice(0,24);
     buildScenes(name);
-    scene = -1;
+
+    idx = -1;
     t0 = performance.now();
   }
 
   function loop(now){
     drawMatrix();
-
     const elapsed = (now - t0)/1000;
-    const s = sceneAtTime(elapsed);
-    if(s !== scene){
-      scene = s;
-      setTargets(targets[scene]);
+
+    const next = idxAtTime(elapsed);
+    if(next !== idx){
+      idx = next;
+      reinitParticlesToPoints(scenes[idx]); // ✅ clave anti-bloques
       disperse();
     }
 
-    const k = (scene === 4) ? 0.72 : 1.0;
+    const k = (idx === 7) ? 0.72 : 1.0;
     stepParticles(k);
 
-    if(scene === 4){
+    if(idx === 7){
       const pulse = 0.90 + 0.08*Math.sin(elapsed*2.1);
       drawParticles(pulse);
     } else {
